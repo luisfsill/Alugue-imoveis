@@ -64,7 +64,17 @@ npm install
 ```bash
 cp .env.example .env
 ```
-Edite o arquivo `.env` com suas credenciais do Supabase.
+Edite o arquivo `.env` com suas credenciais do Supabase:
+```env
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+VITE_STORAGE_URL=sua_url_do_storage
+VITE_STORAGE_KEY=sua_chave_do_storage
+VITE_API_URL=sua_url_da_api
+VITE_API_KEY=sua_chave_da_api
+VITE_APP_NAME=Alugue-Escarpas
+VITE_APP_URL=http://localhost:5173
+```
 
 4. Inicie o projeto:
 ```bash
@@ -105,4 +115,9 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ## 🙏 Agradecimentos
 - [Supabase](https://supabase.com)
 - [React](https://reactjs.org)
-- [Tailwind CSS](https://tailwindcss.com) 
+- [Tailwind CSS](https://tailwindcss.com)
+
+## 🔒 Segurança
+- Nunca compartilhe suas credenciais do Supabase
+- Mantenha o arquivo `.env` seguro e nunca o compartilhe
+- Use o arquivo `.env.example` como referência para configurar suas variáveis de ambiente 
