@@ -19,8 +19,8 @@ function Home() {
       try {
         const properties = await getFeaturedProperties();
         setFeaturedProperties(properties);
-        // Inicializa o índice da imagem atual para cada propriedade
-        setCurrentImageIndexes(new Array(properties.length).fill(0));
+        // Inicializa o índice da imagem atual para cada propriedade com o coverPhotoIndex
+        setCurrentImageIndexes(properties.map(prop => prop.coverPhotoIndex || 0));
       } catch (error) {
         console.error('Erro ao carregar imóveis em destaque:', error);
       } finally {
@@ -37,7 +37,7 @@ function Home() {
       const newIndexes = [...prev];
       const currentIndex = newIndexes[propertyIndex];
       const imagesLength = property.images.length;
-      newIndexes[propertyIndex] = currentIndex === imagesLength - 1 ? 0 : currentIndex + 1;
+      newIndexes[propertyIndex] = currentIndex >= imagesLength - 1 ? 0 : currentIndex + 1;
       return newIndexes;
     });
   }, [featuredProperties]);
@@ -166,7 +166,7 @@ function Home() {
                     {property.images.length > 0 && (
                       <div className="relative">
                         <img
-                          src={property.images[currentImageIndexes[propertyIndex] || 0]}
+                          src={property.images[property.coverPhotoIndex || currentImageIndexes[propertyIndex] || 0]}
                           alt={`${property.title} - Imagem ${(currentImageIndexes[propertyIndex] || 0) + 1}`}
                           className="rounded-lg w-full h-[150px] object-cover"
                         />

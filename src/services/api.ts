@@ -80,7 +80,6 @@ export const createProperty = async (propertyData: Omit<Property, 'id' | 'create
       broker_phone: propertyData.brokerPhone,
       broker_email: propertyData.brokerEmail,
       cover_photo_index: propertyData.coverPhotoIndex || 0,
-      cover_photo_index: propertyData.coverPhotoIndex || 0,
       user_id: user.id
     })
     .select()
@@ -163,7 +162,7 @@ export const getProperties = async (isAdminDashboard = false): Promise<Property[
 
     return data.map(property => ({
       ...property,
-      images: property.property_images?.map(img => img.image_url) || [],
+      images: property.property_images?.map((img: { image_url: string }) => img.image_url) || [],
       features: property.property_features?.[0] || {
         has_pool: false,
         has_garden: false,
@@ -202,7 +201,7 @@ export const getProperties = async (isAdminDashboard = false): Promise<Property[
   
   return data.map(property => ({
     ...property,
-    images: property.property_images?.map(img => img.image_url) || [],
+    images: property.property_images?.map((img: { image_url: string }) => img.image_url) || [],
     features: property.property_features?.[0] || {
       has_pool: false,
       has_garden: false,
@@ -242,7 +241,7 @@ export const getProperty = async (id: string): Promise<Property> => {
   
   return {
     ...data,
-    images: data.property_images?.map(img => img.image_url) || [],
+    images: data.property_images?.map((img: { image_url: string }) => img.image_url) || [],
     features: data.property_features?.[0] || {
       has_pool: false,
       has_garden: false,
@@ -252,7 +251,7 @@ export const getProperty = async (id: string): Promise<Property> => {
       has_premium_appliances: false
     },
     isFeatured: data.is_featured,
-    coverPhotoIndex: data.cover_photo_index || 0,
+    coverPhotoIndex: data.cover_photo_index !== undefined ? data.cover_photo_index : 0,
     brokerPhone: data.broker_phone || undefined,
     brokerEmail: data.broker_email || undefined
   };
@@ -276,22 +275,25 @@ export const updateProperty = async (id: string, propertyData: Partial<Property>
     throw new Error('Unauthorized: You can only update your own properties');
   }
 
+  // Prepara os dados para o banco de dados
+  const dbData = {
+    title: propertyData.title,
+    description: propertyData.description,
+    price: propertyData.price,
+    location: propertyData.location,
+    type: propertyData.type,
+    bedrooms: propertyData.bedrooms,
+    bathrooms: propertyData.bathrooms,
+    area: propertyData.area,
+    is_featured: propertyData.isFeatured,
+    broker_phone: propertyData.brokerPhone,
+    broker_email: propertyData.brokerEmail,
+    cover_photo_index: propertyData.coverPhotoIndex
+  };
+
   const { error } = await supabase
     .from('properties')
-    .update({
-      title: propertyData.title,
-      description: propertyData.description,
-      price: propertyData.price,
-      location: propertyData.location,
-      type: propertyData.type,
-      bedrooms: propertyData.bedrooms,
-      bathrooms: propertyData.bathrooms,
-      area: propertyData.area,
-      is_featured: propertyData.isFeatured,
-      broker_phone: propertyData.brokerPhone,
-      broker_email: propertyData.brokerEmail,
-      cover_photo_index: propertyData.coverPhotoIndex || 0
-    })
+    .update(dbData)
     .eq('id', id);
   if (error) throw error;
 

@@ -187,26 +187,6 @@ function AdminDashboard() {
     }
   };
 
-  const handleEdit = (propertyToEdit: Property) => {
-    setIsEditing(true);
-    // Reorganiza as imagens para que a foto de capa seja a primeira
-    const images = [...propertyToEdit.images];
-    if (propertyToEdit.coverPhotoIndex && propertyToEdit.coverPhotoIndex < images.length) {
-      const coverPhoto = images[propertyToEdit.coverPhotoIndex];
-      images.splice(propertyToEdit.coverPhotoIndex, 1);
-      images.unshift(coverPhoto);
-    }
-    setProperty({
-      ...propertyToEdit,
-      images,
-      coverPhotoIndex: 0 // Como reorganizamos as imagens, a foto de capa agora é sempre a primeira
-    });
-    setBrokerPhone(propertyToEdit.brokerPhone || '');
-    setBrokerEmail(propertyToEdit.brokerEmail || '');
-    setCoverPhotoIndex(0);
-    setShowModal(true);
-  };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
@@ -236,7 +216,7 @@ function AdminDashboard() {
         area: property.area || 0,
         type: property.type || 'sale',
         images: property.images || [],
-        coverPhotoIndex: 0, // Como reorganizamos as imagens, a foto de capa é sempre a primeira
+        coverPhotoIndex: coverPhotoIndex,
         features: property.features || {
           has_pool: false,
           has_garden: false,
@@ -259,7 +239,7 @@ function AdminDashboard() {
           p.id === property.id ? { 
             ...p, 
             ...propertyData,
-            coverPhotoIndex: 0, // Como reorganizamos as imagens, a foto de capa é sempre a primeira
+            coverPhotoIndex: coverPhotoIndex,
             features: propertyData.features
           } : p
         ));
@@ -282,6 +262,18 @@ function AdminDashboard() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEdit = (propertyToEdit: Property) => {
+    setIsEditing(true);
+    setProperty({
+      ...propertyToEdit,
+      coverPhotoIndex: propertyToEdit.coverPhotoIndex !== undefined ? propertyToEdit.coverPhotoIndex : 0
+    });
+    setBrokerPhone(propertyToEdit.brokerPhone || '');
+    setBrokerEmail(propertyToEdit.brokerEmail || '');
+    setCoverPhotoIndex(propertyToEdit.coverPhotoIndex !== undefined ? propertyToEdit.coverPhotoIndex : 0);
+    setShowModal(true);
   };
 
   const handleCancelEdit = () => {
@@ -421,7 +413,7 @@ function AdminDashboard() {
                 <div className="flex items-center space-x-4">
                   {prop.images && prop.images[0] && (
                     <img
-                      src={prop.images[0]}
+                      src={prop.images[prop.coverPhotoIndex || 0] || prop.images[0]}
                       alt={prop.title}
                       className="w-20 h-20 object-cover rounded-lg"
                     />

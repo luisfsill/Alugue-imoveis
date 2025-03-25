@@ -184,7 +184,7 @@ function Properties() {
               {/* Property Image */}
               <div className="relative h-48 sm:h-56">
                 <img
-                  src={property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80'}
+                  src={property.images?.[property.coverPhotoIndex || 0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80'}
                   alt={property.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />

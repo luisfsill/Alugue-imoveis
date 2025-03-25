@@ -65,6 +65,13 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Inicializa o selectedIndex com o initialIndex quando o modal for aberto
+    if (images.length > 0 && initialIndex >= 0 && initialIndex < images.length) {
+      setSelectedIndex(initialIndex);
+    }
+  }, [initialIndex, images]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (selectedIndex === null) return;
 
@@ -130,12 +137,34 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
     <div className="container mx-auto px-4">
       {/* Grid de miniaturas */}
       <div className="grid grid-cols-3 gap-4">
-        {images.slice(0, previewCount).map((image, index) => (
+        {/* Reordenar as imagens para colocar a imagem de capa primeiro */}
+        {[
+          // Primeiro a imagem de capa
+          ...images.slice(initialIndex, initialIndex + 1),
+          // Depois as imagens antes da capa
+          ...images.slice(0, initialIndex),
+          // Por fim as imagens depois da capa
+          ...images.slice(initialIndex + 1)
+        ].slice(0, previewCount).map((image, index) => (
           <motion.div
-            key={index}
+            key={`img-${index}`}
             whileHover="hover"
             variants={thumbnailHoverVariants}
-            onClick={() => setSelectedIndex(index)}
+            onClick={() => {
+              // Calcula o índice real na lista original com base na ordem reordenada
+              let realIndex;
+              if (index === 0) {
+                // A primeira miniatura sempre é a imagem de capa
+                realIndex = initialIndex;
+              } else if (index <= initialIndex) {
+                // Miniaturas antes e incluindo a posição original da capa
+                realIndex = index - 1;
+              } else {
+                // Miniaturas após a posição original da capa
+                realIndex = index;
+              }
+              setSelectedIndex(realIndex);
+            }}
             className={`cursor-pointer aspect-square overflow-hidden rounded-lg relative ${
               index === previewCount - 1 && images.length > previewCount ? 'group' : ''
             }`}
