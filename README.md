@@ -52,7 +52,7 @@ Alugue-Escarpas é uma plataforma moderna e intuitiva para anúncios imobiliári
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/Alugue-Escarpas.git
+git clone https://github.com/luisfsill/Alugue-Escarpas.git
 ```
 
 2. Instale as dependências:
@@ -96,11 +96,8 @@ Contribuições são sempre bem-vindas! Para contribuir:
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📄 Licença
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
 ## 👥 Autores
-- Seu Nome - [@seu-usuario](https://github.com/seu-usuario)
+- Luis Felipe - [@luisfsill](https://github.com/luisfsill)
 
 ## 🙏 Agradecimentos
 - [Supabase](https://supabase.com)
