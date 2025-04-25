@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Shield, Trash2, Plus, X, LogOut, ArrowLeft, Edit2, AlertTriangle } from 'lucide-react';
+import { Trash2, Plus, X, LogOut, ArrowLeft, Edit2, AlertTriangle } from 'lucide-react';
 import { supabase, getUserRole, signUp, signOut } from '../lib/supabase';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface User {
   id: string;
@@ -18,27 +18,26 @@ interface NewUser {
   role: 'admin' | 'standard';
 }
 
-interface EditUser {
-  id: string;
-  email: string;
-  password: string;
-}
-
 interface DeleteConfirmation {
   show: boolean;
   userId: string;
   userEmail: string;
 }
 
+interface UserData {
+  id: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
 function UserManagement() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userRole, setUserRole] = useState<'admin' | 'standard'>('standard');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
     show: false,
@@ -50,18 +49,11 @@ function UserManagement() {
     password: '',
     role: 'standard'
   });
-  const [editUser, setEditUser] = useState<EditUser>({
-    id: '',
-    email: '',
-    password: ''
-  });
-  const session = useSession();
 
   useEffect(() => {
     const initialize = async () => {
       try {
         const role = await getUserRole();
-        setUserRole(role);
         if (role !== 'admin') {
           toast.error('Acesso não autorizado');
           navigate('/admin');
@@ -71,14 +63,14 @@ function UserManagement() {
         const { data, error } = await supabase.rpc('list_users');
         if (error) throw error;
 
-        setUsers(data.map((user: any) => ({
-          id: user.id,
-          email: user.email,
-          role: user.role || 'standard',
-          created_at: user.created_at
+        setUsers(data.map((userData: UserData) => ({
+          id: userData.id,
+          email: userData.email,
+          role: userData.role as 'admin' | 'standard' || 'standard',
+          created_at: userData.created_at
         })));
 
-        console.log('Usuarios carregados:', data); // Adicionado log para verificar os dados recebidos
+        console.log('Usuarios carregados:', data);
       } catch (error) {
         console.error('Erro ao carregar usuários:', error);
         toast.error('Erro ao carregar usuários');
@@ -92,12 +84,12 @@ function UserManagement() {
   }, [navigate]);
 
   useEffect(() => {
-    if (session?.user) {
-      console.log('Usuário logado:', session.user.email);
+    if (user) {
+      console.log('Usuário logado:', user.email);
     } else {
       console.log('Nenhum usuário logado');
     }
-  }, [session]);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -200,374 +192,288 @@ function UserManagement() {
     }
   };
 
-  const handleEditClick = (user: User) => {
-    setEditUser({
-      id: user.id,
-      email: user.email,
-      password: ''
-    });
-    setShowEditModal(true);
+  const handleEditClick = () => {
+    // Implementar lógica de edição aqui se necessário
+    toast.success('Funcionalidade de edição em desenvolvimento');
   };
-
-  const handleEditUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setIsEditing(true);
-
-      // Atualizar email se mudou
-      if (editUser.email !== users.find(u => u.id === editUser.id)?.email) {
-        const { error: emailError } = await supabase.rpc('update_user_email', {
-          user_id: editUser.id,
-          new_email: editUser.email
-        });
-        if (emailError) throw emailError;
-      }
-
-      // Atualizar senha se foi fornecida
-      if (editUser.password) {
-        const { error: passwordError } = await supabase.rpc('update_user_password', {
-          user_id: editUser.id,
-          new_password: editUser.password
-        });
-        if (passwordError) throw passwordError;
-      }
-
-      // Atualizar estado local
-      setUsers(prev => prev.map(user => 
-        user.id === editUser.id ? { ...user, email: editUser.email } : user
-      ));
-
-      toast.success('Usuário atualizado com sucesso!');
-      setShowEditModal(false);
-    } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('Erro ao atualizar usuário');
-      }
-    } finally {
-      setIsEditing(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <svg className="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p className="text-gray-600">Carregando usuários...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <header className="text-white p-4 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-black">Gerenciar Usuários</h1>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+          <Link 
+            to="/admin" 
+            className="text-gray-600 hover:text-gray-800 flex items-center gap-2 mb-2 sm:mb-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Voltar
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Gerenciar Usuários
+          </h1>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Novo Usuário
+          </button>
           <button
             onClick={handleLogout}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center ml-4"
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center"
           >
             <LogOut className="w-5 h-5 mr-2" />
             Sair
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="p-4">
-        <div className="flex justify-between items-center">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Criar Usuário
-          </button>
-          <Link
-            to="/admin"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            <span>Voltar</span>
-          </Link>
-        </div>
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mt-4">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Função
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data de Criação
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+      {/* Users List */}
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-48">
+            <div className="flex flex-col items-center">
+              <svg className="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="text-gray-600">Carregando usuários...</p>
+            </div>
+          </div>
+        ) : users.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">
+            Nenhum usuário cadastrado.
+          </p>
+        ) : (
+          <>
+            {/* Versão Mobile - Cards */}
+            <div className="block md:hidden space-y-4">
               {users.map(user => (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
-                      className="text-sm text-gray-900 border rounded-md px-2 py-1"
-                    >
-                      <option value="standard">Usuário Padrão</option>
-                      <option value="admin">Administrador</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex justify-end space-x-4">
-                      <button
-                        onClick={() => handleEditClick(user)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded-full"
+                <div key={user.id} className="bg-white border rounded-lg p-4 space-y-3">
+                  <div className="flex flex-col space-y-1">
+                    <span className="font-medium text-base">{user.email}</span>
+                    <span className="text-sm text-gray-500">
+                      Criado em: {new Date(user.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-3">
+                    <div className="w-full">
+                      <label className="block text-sm text-gray-500 mb-1">Função:</label>
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
+                        className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                       >
-                        <Edit2 className="w-5 h-5" />
+                        <option value="standard">Padrão</option>
+                        <option value="admin">Administrador</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleEditClick}
+                        className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Editar
                       </button>
                       <button
                         onClick={() => handleDeleteClick(user.id, user.email)}
-                        className="text-red-600 hover:text-red-800 transition-colors p-1 hover:bg-red-50 rounded-full"
+                        className="flex-1 flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Criar Novo Usuário</h2>
+            </div>
+
+            {/* Versão Desktop - Tabela */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr className="text-left text-sm text-gray-500">
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Data de Criação</th>
+                    <th className="px-4 py-3">Função</th>
+                    <th className="px-4 py-3">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {users.map(user => (
+                    <tr key={user.id} className="text-sm hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="font-medium">{user.email}</span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-gray-500">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
+                          className="w-auto px-3 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="standard">Padrão</option>
+                          <option value="admin">Administrador</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleEditClick}
+                            className="flex items-center justify-center px-3 py-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4 mr-1" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(user.id, user.email)}
+                            className="flex items-center justify-center px-3 py-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            <span>Excluir</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-semibold">Novo Usuário</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Senha
+                </label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Função
+                </label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'standard' })}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="standard">Padrão</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-4 mt-6">
                 <button
+                  type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <form onSubmit={handleCreateUser} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Digite o email"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Senha
-                  </label>
-                  <input
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Digite a senha"
-                    required
-                    minLength={6}
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Mínimo de 6 caracteres
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Função
-                  </label>
-                  <select
-                    value={newUser.role}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value as 'admin' | 'standard' }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="standard">Usuário Padrão</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
-                <div className="flex justify-end gap-4 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isCreating}
-                    className={`bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center ${
-                      isCreating ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isCreating ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Criando...
-                      </>
-                    ) : (
-                      'Criar Usuário'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-        {showEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Editar Usuário</h2>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <form onSubmit={handleEditUser} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={editUser.email}
-                    onChange={(e) => setEditUser(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Digite o novo email"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nova Senha (opcional)
-                  </label>
-                  <input
-                    type="password"
-                    value={editUser.password}
-                    onChange={(e) => setEditUser(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Digite a nova senha"
-                    minLength={6}
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Deixe em branco para manter a senha atual
-                  </p>
-                </div>
-                <div className="flex justify-end gap-4 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isEditing}
-                    className={`bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center ${
-                      isEditing ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isEditing ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Salvando...
-                      </>
-                    ) : (
-                      'Salvar Alterações'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-        {deleteConfirmation.show && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-red-100 rounded-full p-3">
-                  <AlertTriangle className="w-8 h-8 text-red-600" />
-                </div>
-              </div>
-              <h2 className="text-xl font-semibold text-center mb-2">Confirmar Exclusão</h2>
-              <p className="text-gray-600 text-center mb-6">
-                Tem certeza que deseja excluir o usuário <br />
-                <span className="font-semibold">{deleteConfirmation.userEmail}</span>?
-                <br />
-                Esta ação não pode ser desfeita.
-              </p>
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={handleDeleteCancel}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
-                  disabled={isDeleting}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={handleDeleteConfirm}
-                  disabled={isDeleting}
-                  className={`bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center ${
-                    isDeleting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  type="submit"
+                  disabled={isCreating}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
-                  {isDeleting ? (
+                  {isCreating ? (
                     <>
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Excluindo...
+                      Criando...
                     </>
                   ) : (
-                    'Sim, Excluir'
+                    'Criar Usuário'
                   )}
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md p-6">
+            <div className="flex items-center mb-4 text-red-600">
+              <AlertTriangle className="w-6 h-6 mr-2" />
+              <h3 className="text-lg font-semibold">Confirmar Exclusão</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Tem certeza que deseja excluir o usuário <span className="font-semibold">{deleteConfirmation.userEmail}</span>?
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Excluindo...
+                  </>
+                ) : (
+                  'Excluir'
+                )}
+              </button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }

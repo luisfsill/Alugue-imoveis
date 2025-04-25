@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Building2, LogIn, Users, Menu, X } from 'lucide-react';
 import { getUserRole } from '../lib/supabase';
@@ -10,7 +10,6 @@ function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const isAdminRoute = location.pathname.startsWith('/admin');
 
   useEffect(() => {
     const checkUserRole = async () => {

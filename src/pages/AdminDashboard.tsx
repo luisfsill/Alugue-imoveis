@@ -385,30 +385,32 @@ function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">
+    <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           {userRole === 'admin' ? 'Painel Administrativo' : 'Meus Imóveis'}
         </h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <button 
             onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
           >
             <Plus className="w-5 h-5 mr-2" />
             Adicionar Imóvel
           </button>
           <button
             onClick={handleLogout}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center"
           >
             <LogOut className="w-5 h-5 mr-2" />
             Sair
           </button>
         </div>
       </div>
+
       {/* Property List */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
         <h2 className="text-xl font-semibold mb-4">Gerenciar Imóveis</h2>
         {properties.length === 0 ? (
           <p className="text-center text-gray-500 py-8">
@@ -417,19 +419,19 @@ function AdminDashboard() {
         ) : (
           <div className="space-y-4">
             {properties.map((prop: Property) => (
-              <div key={prop.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                <div className="flex items-center space-x-4">
+              <div key={prop.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                   {prop.images && prop.images[0] && (
                     <img
                       src={prop.images[0]}
                       alt={prop.title}
-                      className="w-20 h-20 object-cover rounded-lg"
+                      className="w-full sm:w-20 h-40 sm:h-20 object-cover rounded-lg"
                     />
                   )}
-                  <div>
+                  <div className="w-full sm:w-auto">
                     <h3 className="font-semibold text-lg">{prop.title}</h3>
                     <p className="text-gray-600">{prop.location}</p>
-                    <div className="flex items-center space-x-4 mt-1">
+                    <div className="flex flex-wrap items-center gap-4 mt-2">
                       <p className="text-blue-600 font-semibold">
                         {prop.price === 0 && prop.type === 'rent' ? 'A consultar!' : `R$ ${formatCurrency(prop.price)}${prop.type === 'rent' ? '/mês' : ''}`}
                       </p>
@@ -440,26 +442,26 @@ function AdminDashboard() {
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {prop.features?.has_pool && <FaSwimmingPool className="w-4 h-4 text-blue-600" />}
-                      {prop.features?.has_garden && <Tree className="w-4 h-4 text-blue-600" />}
-                      {prop.features?.has_garage && <Car className="w-4 h-4 text-blue-600" />}
-                      {prop.features?.has_security_system && <Shield className="w-4 h-4 text-blue-600" />}
-                      {prop.features?.has_air_conditioning && <Wind className="w-4 h-4 text-blue-600" />}
-                      {prop.features?.has_premium_appliances && <Refrigerator className="w-4 h-4 text-blue-600" />}
+                    <div className="flex flex-wrap gap-3 mt-3">
+                      {prop.features?.has_pool && <FaSwimmingPool className="w-5 h-5 text-blue-600" />}
+                      {prop.features?.has_garden && <Tree className="w-5 h-5 text-blue-600" />}
+                      {prop.features?.has_garage && <Car className="w-5 h-5 text-blue-600" />}
+                      {prop.features?.has_security_system && <Shield className="w-5 h-5 text-blue-600" />}
+                      {prop.features?.has_air_conditioning && <Wind className="w-5 h-5 text-blue-600" />}
+                      {prop.features?.has_premium_appliances && <Refrigerator className="w-5 h-5 text-blue-600" />}
                     </div>
                   </div>
                 </div>
-                <div className="flex space-x-4">
+                <div className="flex justify-end space-x-4 w-full sm:w-auto">
                   <button 
                     onClick={() => handleEdit(prop)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors px-3 py-1 rounded-lg hover:bg-blue-50"
+                    className="flex-1 sm:flex-none text-blue-600 hover:text-blue-800 transition-colors px-4 py-2 rounded-lg hover:bg-blue-50 text-center"
                   >
                     Editar
                   </button>
                   <button 
                     onClick={() => handleDeleteProperty(prop.id!)}
-                    className="text-red-600 hover:text-red-800 transition-colors p-1 rounded-lg hover:bg-red-50"
+                    className="flex-1 sm:flex-none text-red-600 hover:text-red-800 transition-colors px-4 py-2 rounded-lg hover:bg-red-50 flex items-center justify-center"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>

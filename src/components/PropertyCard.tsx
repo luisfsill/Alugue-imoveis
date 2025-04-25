@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Image } from 'lucide-react';
 import type { Property } from '../types/property';

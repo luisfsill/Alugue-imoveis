@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/supabase';
-import { toast } from 'react-hot-toast';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -81,7 +80,7 @@ export const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString().substring(2)}.${fileExt}`;
 
-    const { error: uploadError, data } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('property-images')
       .upload(fileName, file);
 

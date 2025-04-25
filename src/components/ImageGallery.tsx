@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence, useAnimation, PanInfo } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 interface Image {
   src: string;
@@ -56,13 +55,35 @@ const thumbnailHoverVariants = {
   }
 };
 
-export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGalleryProps) {
+export function ImageGallery({ images, onClose }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [direction, setDirection] = useState(0);
   const previewCount = 3;
-  const location = useLocation();
   const controls = useAnimation();
   const modalRef = useRef<HTMLDivElement>(null);
+
+  const handleClose = useCallback(() => {
+    setSelectedIndex(null);
+    setDirection(0);
+    controls.set("center");
+    if (onClose) onClose();
+  }, [onClose, controls]);
+
+  const handleNext = useCallback(() => {
+    if (selectedIndex === null) return;
+    setDirection(1);
+    setSelectedIndex((prev) => 
+      prev === null ? 0 : prev === images.length - 1 ? 0 : prev + 1
+    );
+  }, [selectedIndex, images.length]);
+
+  const handlePrevious = useCallback(() => {
+    if (selectedIndex === null) return;
+    setDirection(-1);
+    setSelectedIndex((prev) => 
+      prev === null ? images.length - 1 : prev === 0 ? images.length - 1 : prev - 1
+    );
+  }, [selectedIndex, images.length]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -85,34 +106,9 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedIndex]);
+  }, [selectedIndex, handleClose, handleNext, handlePrevious]);
 
-  // Reset state when modal closes
-  const handleClose = () => {
-    // Reset all state
-    setSelectedIndex(null);
-    setDirection(0);
-    controls.set("center");
-    if (onClose) onClose();
-  };
-
-  const handleNext = () => {
-    if (selectedIndex === null) return;
-    setDirection(1);
-    setSelectedIndex((prev) => 
-      prev === null ? 0 : prev === images.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const handlePrevious = () => {
-    if (selectedIndex === null) return;
-    setDirection(-1);
-    setSelectedIndex((prev) => 
-      prev === null ? images.length - 1 : prev === 0 ? images.length - 1 : prev - 1
-    );
-  };
-
-  const handleDragEnd = (e: any, { offset, velocity }: any) => {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
     const swipe = offset.x;
     
     if (Math.abs(velocity.x) > 500 || Math.abs(swipe) > 100) {
@@ -169,22 +165,22 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
             animate="visible"
             exit="exit"
             onClick={(e) => {
-              // Only close if clicking the backdrop
               if (e.target === modalRef.current) {
                 handleClose();
               }
             }}
           >
-            <div className="absolute top-0 right-0 left-0 h-16 bg-gradient-to-b from-black/50 to-transparent">
+            {/* Botão de fechar responsivo */}
+            <div className="absolute top-20 right-20 p-4 sm:p-6 z-50">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleClose();
                 }}
-                className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2 rounded-full bg-black/30 hover:bg-black/50"
+                className="p-2 sm:p-3 rounded-full bg-black/50 hover:bg-black/70 text-white hover:text-red-600 transition-all transform hover:scale-110"
                 aria-label="Fechar galeria"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" />
               </button>
             </div>
 
@@ -193,7 +189,7 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
                 e.stopPropagation();
                 handlePrevious();
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-20"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-40"
               aria-label="Imagem anterior"
             >
               <ChevronLeft className="w-12 h-12" />

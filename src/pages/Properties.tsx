@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Building2, Bed, Bath, Square, Search, MapPin, DollarSign } from 'lucide-react';
+import { Building2, Bed, Bath, Square, Search, MapPin } from 'lucide-react';
 import { getProperties } from '../services/api';
 import type { Property } from '../types/property';
 
@@ -28,7 +28,7 @@ function Properties() {
     loadProperties();
   }, []);
 
-  const filteredAndSortedProperties = React.useMemo(() => {
+  const filteredAndSortedProperties = useMemo(() => {
     let result = [...properties];
     // Aplicar filtros
     result = result.filter(property => {
@@ -58,8 +58,6 @@ function Properties() {
       case 'newest':
         result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
-      default:
-        console.warn('Ordenação inválida:', sortBy);
     }
     return result;
   }, [properties, filterType, searchLocation, sortBy]);
@@ -220,15 +218,18 @@ function Properties() {
                     <span className="text-sm text-gray-600">{property.area}m²</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center text-blue-600 font-bold text-xl">
-                    <DollarSign className="w-5 h-5 mr-1" />
+                    <span className="mr-1">R$</span>
                     {property.price === 0 && property.type === 'rent' ? 'A consultar!' : property.price.toLocaleString('pt-BR')}
                   </div>
                   {property.type === 'rent' && (
                     <span className="text-gray-600 text-sm">/mês</span>
                   )}
                 </div>
+                <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                  Ver Detalhes
+                </button>
               </div>
             </Link>
           ))}

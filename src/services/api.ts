@@ -1,5 +1,9 @@
 import { supabase } from '../lib/supabase';
-import type { Property, PropertyFeatures } from '../types/property';
+import type { Property } from '../types/property';
+
+interface PropertyImage {
+  image_url: string;
+}
 
 // User Management Functions
 export const updateUserEmail = async (userId: string, newEmail: string): Promise<void> => {
@@ -44,7 +48,7 @@ export const getFeaturedProperties = async (): Promise<Property[]> => {
   
   return data.map(property => ({
     ...property,
-    images: property.property_images?.map(img => img.image_url) || [],
+    images: property.property_images?.map((img: PropertyImage) => img.image_url) || [],
     features: property.property_features?.[0] || {
       has_pool: false,
       has_garden: false,
@@ -79,7 +83,6 @@ export const createProperty = async (propertyData: Omit<Property, 'id' | 'create
       is_featured: propertyData.isFeatured,
       broker_phone: propertyData.brokerPhone,
       broker_email: propertyData.brokerEmail,
-      cover_photo_index: propertyData.coverPhotoIndex || 0,
       cover_photo_index: propertyData.coverPhotoIndex || 0,
       user_id: user.id
     })
@@ -163,7 +166,7 @@ export const getProperties = async (isAdminDashboard = false): Promise<Property[
 
     return data.map(property => ({
       ...property,
-      images: property.property_images?.map(img => img.image_url) || [],
+      images: property.property_images?.map((img: PropertyImage) => img.image_url) || [],
       features: property.property_features?.[0] || {
         has_pool: false,
         has_garden: false,
@@ -202,7 +205,7 @@ export const getProperties = async (isAdminDashboard = false): Promise<Property[
   
   return data.map(property => ({
     ...property,
-    images: property.property_images?.map(img => img.image_url) || [],
+    images: property.property_images?.map((img: PropertyImage) => img.image_url) || [],
     features: property.property_features?.[0] || {
       has_pool: false,
       has_garden: false,
@@ -242,7 +245,7 @@ export const getProperty = async (id: string): Promise<Property> => {
   
   return {
     ...data,
-    images: data.property_images?.map(img => img.image_url) || [],
+    images: data.property_images?.map((img: PropertyImage) => img.image_url) || [],
     features: data.property_features?.[0] || {
       has_pool: false,
       has_garden: false,
@@ -266,12 +269,18 @@ export const updateProperty = async (id: string, propertyData: Partial<Property>
   const { data: userData } = await supabase.auth.getUser();
   const userRole = userData?.user?.user_metadata?.role || 'standard';
 
-  // Verify ownership or admin status
+  // Verify ownership or admin status and get current images
   const { data: existingProperty } = await supabase
     .from('properties')
-    .select('user_id')
+    .select(`
+      user_id,
+      property_images (
+        image_url
+      )
+    `)
     .eq('id', id)
     .single();
+
   if (!existingProperty || (existingProperty.user_id !== user.id && userRole !== 'admin')) {
     throw new Error('Unauthorized: You can only update your own properties');
   }
@@ -316,8 +325,29 @@ export const updateProperty = async (id: string, propertyData: Partial<Property>
   }
 
   // Update images if provided
-  if (propertyData.images) {
-    // First delete existing images
+  if (propertyData.images !== undefined) {
+    // Get the current image URLs
+    const currentImageUrls = existingProperty.property_images?.map(img => img.image_url) || [];
+    const newImages = propertyData.images;
+    
+    // Find images that were removed
+    const removedImages = currentImageUrls.filter(url => !newImages.includes(url));
+    
+    // Delete removed images from storage
+    for (const imageUrl of removedImages) {
+      const fileName = imageUrl.split('/').pop();
+      if (fileName) {
+        const { error: storageError } = await supabase.storage
+          .from('property-images')
+          .remove([fileName]);
+        
+        if (storageError) {
+          console.error('Erro ao deletar imagem do storage:', storageError);
+        }
+      }
+    }
+
+    // Update database records
     const { error: deleteImageError } = await supabase
       .from('property_images')
       .delete()
@@ -325,9 +355,9 @@ export const updateProperty = async (id: string, propertyData: Partial<Property>
 
     if (deleteImageError) throw deleteImageError;
 
-    // Then insert new images
-    if (propertyData.images.length > 0) {
-      const imageInserts = propertyData.images.map(image_url => ({
+    // Insert new image records
+    if (newImages.length > 0) {
+      const imageInserts = newImages.map(image_url => ({
         property_id: id,
         image_url
       }));
@@ -349,16 +379,38 @@ export const deleteProperty = async (id: string): Promise<void> => {
   const userRole = userData?.user?.user_metadata?.role || 'standard';
 
   // Verify ownership or admin status
-  const { data: existingProperty } = await supabase
+  const { data: property } = await supabase
     .from('properties')
-    .select('user_id')
+    .select(`
+      user_id,
+      property_images (
+        image_url
+      )
+    `)
     .eq('id', id)
     .single();
 
-  if (!existingProperty || (existingProperty.user_id !== user.id && userRole !== 'admin')) {
+  if (!property || (property.user_id !== user.id && userRole !== 'admin')) {
     throw new Error('Unauthorized: You can only delete your own properties');
   }
 
+  // Delete images from storage
+  if (property.property_images) {
+    for (const image of property.property_images) {
+      const fileName = image.image_url.split('/').pop();
+      if (fileName) {
+        const { error: storageError } = await supabase.storage
+          .from('property-images')
+          .remove([fileName]);
+        
+        if (storageError) {
+          console.error('Erro ao deletar imagem do storage:', storageError);
+        }
+      }
+    }
+  }
+
+  // Delete the property (this will cascade delete related records)
   const { error } = await supabase
     .from('properties')
     .delete()

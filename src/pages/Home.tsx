@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Building2, MapPin, DollarSign, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getFeaturedProperties } from '../services/api';
 import type { Property } from '../types/property';
-// Importando os novos ícones
-import { Bed, Bath, Square, Phone, Mail, School as Pool, Trees as Tree, Car, Shield, Wind, Refrigerator, X, ArrowLeft } from 'lucide-react';
+import { Bed, Bath, Square } from 'lucide-react';
 
 function Home() {
   const navigate = useNavigate();
@@ -54,14 +54,6 @@ function Home() {
     });
   }, [featuredProperties]);
 
-  const handleImageDotClick = useCallback((propertyIndex: number, imageIndex: number) => {
-    setCurrentImageIndexes(prev => {
-      const newIndexes = [...prev];
-      newIndexes[propertyIndex] = imageIndex;
-      return newIndexes;
-    });
-  }, []);
-
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchLocation) {
@@ -77,28 +69,11 @@ function Home() {
   };
 
   return (
-    <div className="space-y-12">
-      {/* Hero Section with Search */}
-      <section className="relative h-[500px] sm:h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <img 
-            src="https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Luxury Home"
-            className="absolute inset-0 w-full h-full object-cover object-bottom"
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-60"></div>
-        </div>
-        {/* Content */}
-        <div className="relative z-10 text-center text-white px-4 sm:px-0">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
-            Encontre as melhores casas em Escarpas do lago e Região!
-          </h1>
-          <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-8 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-            Descubra a propriedade perfeita para você
-          </p>
-          {/* Search Box - Mobile Optimized */}
-          <div className="bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg max-w-xl mx-auto">
+    <div className="space-y-8">
+      {/* Search Section */}
+      <section className="bg-white shadow-md py-6">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
             <div className="flex flex-col gap-3">
               {/* Search Input */}
               <div className="relative">
@@ -139,12 +114,13 @@ function Home() {
           </div>
         </div>
       </section>
+
       {/* Featured Properties Section */}
-      <section className="py-12 bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50">
+      <section className="py-8">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-8">Imóveis em Destaque</h2>
           {isLoading ? (
-            <div className="flex justify-center items-center h-[500px]">
+            <div className="flex justify-center items-center h-[300px]">
               <div className="flex flex-col items-center">
                 <svg className="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -158,60 +134,82 @@ function Home() {
               <p className="text-gray-600">Nenhum imóvel em destaque no momento.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredProperties.slice(0, 3).map((property, propertyIndex) => (
-                <div key={propertyIndex} className="bg-white p-6 rounded-lg shadow-md relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {featuredProperties.slice(0, 4).map((property, propertyIndex) => (
+                <div key={propertyIndex} className="bg-white p-4 rounded-lg shadow-md relative group">
                   {/* Carousel de Imagens */}
-                  <div className="mb-6">
+                  <div className="mb-4">
                     {property.images.length > 0 && (
-                      <div className="relative">
-                        <img
-                          src={property.images[currentImageIndexes[propertyIndex] || 0]}
-                          alt={`${property.title} - Imagem ${(currentImageIndexes[propertyIndex] || 0) + 1}`}
-                          className="rounded-lg w-full h-[150px] object-cover"
-                        />
-                        <div className="absolute top-1/2 left-4 -translate-y-1/2 opacity-90">
-                          <button
-                            onClick={() => prevImage(propertyIndex)}
-                            className="rounded-full bg-gray-800/50 p-2 hover:bg-gray-800/75 transition-opacity duration-300"
+                      <div className="relative overflow-hidden">
+                        <AnimatePresence initial={false} mode="wait">
+                          <motion.img
+                            key={currentImageIndexes[propertyIndex]}
+                            src={property.images[currentImageIndexes[propertyIndex] || 0]}
+                            alt={`${property.title} - Imagem ${(currentImageIndexes[propertyIndex] || 0) + 1}`}
+                            className="rounded-lg w-full h-[200px] object-cover absolute"
+                            initial={{ x: 300, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -300, opacity: 0 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30
+                            }}
+                          />
+                        </AnimatePresence>
+                        <div className="relative w-full h-[200px]" />
+                        <div className="absolute top-1/2 left-2 -translate-y-1/2 opacity-0 group-hover:opacity-90 transition-opacity duration-300 z-10">
+                          <motion.button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              prevImage(propertyIndex);
+                            }}
+                            className="rounded-full bg-gray-800/50 p-1.5 hover:bg-gray-800/75 transition-all duration-300"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
                           >
-                            <ChevronLeft className="w-6 h-6 text-white" />
-                          </button>
+                            <ChevronLeft className="w-5 h-5 text-white" />
+                          </motion.button>
                         </div>
-                        <div className="absolute top-1/2 right-4 -translate-y-1/2 opacity-90">
-                          <button
-                            onClick={() => nextImage(propertyIndex)}
-                            className="rounded-full bg-gray-800/50 p-2 hover:bg-gray-800/75 transition-opacity duration-300"
+                        <div className="absolute top-1/2 right-2 -translate-y-1/2 opacity-0 group-hover:opacity-90 transition-opacity duration-300 z-10">
+                          <motion.button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              nextImage(propertyIndex);
+                            }}
+                            className="rounded-full bg-gray-800/50 p-1.5 hover:bg-gray-800/75 transition-all duration-300"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
                           >
-                            <ChevronRight className="w-6 h-6 text-white" />
-                          </button>
+                            <ChevronRight className="w-5 h-5 text-white" />
+                          </motion.button>
                         </div>
                       </div>
                     )}
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">{property.title}</h3>
-                  <div className="flex items-center text-gray-600 mb-4">
-                    <MapPin className="w-5 h-5 mr-2 flex-shrink-0" />
-                    <span>{property.location}</span>
+                  <h3 className="text-xl font-bold mb-2 line-clamp-1">{property.title}</h3>
+                  <div className="flex items-center text-gray-600 mb-3">
+                    <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span className="text-sm line-clamp-1">{property.location}</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 mb-6 text-center">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <Bed className="w-6 h-6 mx-auto text-blue-600 mb-1" />
-                      <span className="block text-sm text-gray-600">{property.bedrooms} Quartos</span>
+                  <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+                    <div className="bg-gray-50 p-2 rounded-lg">
+                      <Bed className="w-4 h-4 mx-auto text-blue-600 mb-1" />
+                      <span className="block text-xs text-gray-600">{property.bedrooms} Quartos</span>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <Bath className="w-6 h-6 mx-auto text-blue-600 mb-1" />
-                      <span className="block text-sm text-gray-600">{property.bathrooms} Banheiros</span>
+                    <div className="bg-gray-50 p-2 rounded-lg">
+                      <Bath className="w-4 h-4 mx-auto text-blue-600 mb-1" />
+                      <span className="block text-xs text-gray-600">{property.bathrooms} Banheiros</span>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <Square className="w-6 h-6 mx-auto text-blue-600 mb-1" />
-                      <span className="block text-sm text-gray-600">{property.area}m²</span>
+                    <div className="bg-gray-50 p-2 rounded-lg">
+                      <Square className="w-4 h-4 mx-auto text-blue-600 mb-1" />
+                      <span className="block text-xs text-gray-600">{property.area}m²</span>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-blue-600 mb-6">
+                  <div className="text-xl font-bold text-blue-600 mb-4">
                     {property.price === 0 && property.type === 'rent' ? 'A consultar!' : `R$ ${property.price.toLocaleString('pt-BR')}${property.type === 'rent' ? '/mês' : ''}`}
                   </div>
-                  <Link to={`/properties/${property.id}`} className="block w-full text-center bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                  <Link to={`/properties/${property.id}`} className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
                     Ver Detalhes
                   </Link>
                 </div>
@@ -220,6 +218,7 @@ function Home() {
           )}
         </div>
       </section>
+
       {/* Promotional Section */}
       <section className="py-12 bg-blue-600 text-white">
         <div className="container mx-auto px-4">
@@ -266,6 +265,7 @@ function Home() {
           </div>
         </div>
       </section>
+
       {/* Why Choose Us Section */}
       <section className="py-12">
         <h2 className="text-3xl font-bold text-center mb-8">Por Que Nos Escolher</h2>

@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Building2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signIn } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+
+interface LocationState {
+  from?: {
+    pathname: string;
+  };
+}
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -16,7 +22,8 @@ function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      const from = (location.state as any)?.from?.pathname || '/admin';
+      const state = location.state as LocationState;
+      const from = state?.from?.pathname || '/admin';
       navigate(from, { replace: true });
     }
   }, [user, navigate, location]);
@@ -33,7 +40,8 @@ function Login() {
       setIsLoading(true);
       await signIn(email, password);
       toast.success('Login realizado com sucesso!');
-      const from = (location.state as any)?.from?.pathname || '/admin';
+      const state = location.state as LocationState;
+      const from = state?.from?.pathname || '/admin';
       navigate(from, { replace: true });
     } catch (error) {
       console.error('Erro no login:', error);

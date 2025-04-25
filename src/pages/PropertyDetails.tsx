@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ImageGallery } from '../components/ImageGallery';
 import { 
-  Building2, 
   Bed, 
   Bath, 
   Square, 
   MapPin, 
   Phone, 
   Mail, 
-  School as Pool, 
   Trees as Tree, 
   Car, 
   Shield, 
