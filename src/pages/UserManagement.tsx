@@ -242,7 +242,7 @@ function UserManagement() {
               </svg>
               <p className="text-gray-600">Carregando usuários...</p>
             </div>
-          </div>
+        </div>
         ) : users.length === 0 ? (
           <p className="text-center text-gray-500 py-8">
             Nenhum usuário cadastrado.
@@ -263,14 +263,14 @@ function UserManagement() {
                   <div className="flex flex-col space-y-3">
                     <div className="w-full">
                       <label className="block text-sm text-gray-500 mb-1">Função:</label>
-                      <select
-                        value={user.role}
-                        onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
                         className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
+                    >
                         <option value="standard">Padrão</option>
-                        <option value="admin">Administrador</option>
-                      </select>
+                      <option value="admin">Administrador</option>
+                    </select>
                     </div>
                     
                     <div className="flex gap-2">
@@ -336,102 +336,102 @@ function UserManagement() {
                           <button
                             onClick={() => handleDeleteClick(user.id, user.email)}
                             className="flex items-center justify-center px-3 py-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-                          >
+                      >
                             <Trash2 className="w-4 h-4 mr-1" />
                             <span>Excluir</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
           </>
         )}
       </div>
 
       {/* Create User Modal */}
-      {showCreateModal && (
+        {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-xl font-semibold">Novo Usuário</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             <form onSubmit={handleCreateUser} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={newUser.email}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Senha
-                </label>
-                <input
-                  type="password"
-                  value={newUser.password}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={newUser.password}
                   onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Função
-                </label>
-                <select
-                  value={newUser.role}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Função
+                  </label>
+                  <select
+                    value={newUser.role}
                   onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'standard' })}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
+                  >
                   <option value="standard">Padrão</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-4 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <div className="flex justify-end gap-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreating}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                >
-                  {isCreating ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Criando...
-                    </>
-                  ) : (
-                    'Criar Usuário'
-                  )}
-                </button>
-              </div>
-            </form>
+                  >
+                    {isCreating ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Criando...
+                      </>
+                    ) : (
+                      'Criar Usuário'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmation.show && (
@@ -443,37 +443,37 @@ function UserManagement() {
             </div>
             <p className="text-gray-600 mb-6">
               Tem certeza que deseja excluir o usuário <span className="font-semibold">{deleteConfirmation.userEmail}</span>?
-              Esta ação não pode ser desfeita.
-            </p>
+                Esta ação não pode ser desfeita.
+              </p>
             <div className="flex justify-end gap-4">
-              <button
-                onClick={handleDeleteCancel}
+                <button
+                  onClick={handleDeleteCancel}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                disabled={isDeleting}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
+                  disabled={isDeleting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
                 className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {isDeleting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Excluindo...
-                  </>
-                ) : (
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Excluindo...
+                    </>
+                  ) : (
                   'Excluir'
-                )}
-              </button>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

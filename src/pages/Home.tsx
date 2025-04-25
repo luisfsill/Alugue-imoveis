@@ -144,8 +144,8 @@ function Home() {
                         <AnimatePresence initial={false} mode="wait">
                           <motion.img
                             key={currentImageIndexes[propertyIndex]}
-                            src={property.images[currentImageIndexes[propertyIndex] || 0]}
-                            alt={`${property.title} - Imagem ${(currentImageIndexes[propertyIndex] || 0) + 1}`}
+                          src={property.images[currentImageIndexes[propertyIndex] || 0]}
+                          alt={`${property.title} - Imagem ${(currentImageIndexes[propertyIndex] || 0) + 1}`}
                             className="rounded-lg w-full h-[200px] object-cover absolute"
                             initial={{ x: 300, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
