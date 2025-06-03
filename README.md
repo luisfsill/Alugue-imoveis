@@ -1,15 +1,15 @@
 # 🏠 Alugue-imoveis - Plataforma de Anúncios Imobiliários
 
 ## 📝 Sobre o Projeto
-Alugue-imoveis é uma plataforma moderna e intuitiva para anúncios imobiliários, desenvolvida com React e TypeScript. A plataforma permite que corretores e administradores gerenciem imóveis para venda e aluguel de forma eficiente.
+Alugue-imoveis é uma plataforma moderna e intuitiva para anúncios imobiliários. A plataforma permite que corretores e administradores gerenciem imóveis para venda e aluguel de forma eficiente.
 
-## ✨ Funcionalidades Principais
+## ✨ Funcionalidades
 
 ### 👤 Área do Usuário
-- 🔐 Sistema de autenticação seguro com Supabase
+- 🔐 Sistema de autenticação seguro
 - 👥 Diferentes níveis de acesso (Admin e Corretor)
 - 🚪 Logout seguro
-- 🛡️ Sistema de segurança e rate limiting
+- 🛡️ Sistema de segurança avançado
 
 ### 🏢 Gestão de Imóveis
 - ➕ Cadastro de novos imóveis
@@ -20,15 +20,15 @@ Alugue-imoveis é uma plataforma moderna e intuitiva para anúncios imobiliário
 - ⭐ Marcação de imóveis em destaque
 - 🔄 Sistema de carrossel de imagens responsivo
 
-### 📋 Detalhes do Imóvel
+### 📋 Informações do Imóvel
 - 💰 Preço em Real (R$) para venda ou aluguel
 - 🛏️ Número de quartos
 - 🚿 Número de banheiros
 - 📏 Área em metros quadrados
-- 📍 Localização
-- 📝 Descrição detalhada
+- 📍 Localização detalhada
+- 📝 Descrição completa
 
-### 🏊‍♂️ Características do Imóvel
+### 🏊‍♂️ Características Disponíveis
 - 🏊‍♂️ Piscina
 - 🌳 Jardim
 - 🚗 Garagem
@@ -36,81 +36,29 @@ Alugue-imoveis é uma plataforma moderna e intuitiva para anúncios imobiliário
 - ❄️ Ar Condicionado Central
 - 🏠 Eletrodomésticos de Alto Padrão
 
-### 👨‍💼 Informações do Corretor
-- 📞 Telefone de contato
-- 📧 Email de contato
+### 👨‍💼 Contato com Corretor
+- 📞 Telefone de contato direto
+- 📧 Email para informações
+- 💬 WhatsApp integrado
 
-## 🛠️ Tecnologias Utilizadas
-
-- ⚛️ React 18
-- 📘 TypeScript
-- 🎨 Tailwind CSS
-- 🔥 Supabase (Backend, Auth e Storage)
-- 📱 React Router
-- 🎯 React Hot Toast
-- 🖼️ React Dropzone
-- 🎬 Framer Motion
-- ⚡ Vite
-
-## 🚀 Como Executar o Projeto
-
-1. Clone o repositório:
-```bash
-git clone https://github.com/luisfsill/Alugue-imoveis.git
-```
-
-2. Instale as dependências:
-```bash
-npm install
-```
-
-3. Configure as variáveis de ambiente:
-Crie um arquivo `.env` na raiz do projeto com:
-```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anonima-aqui
-```
-
-4. Inicie o projeto:
-```bash
-npm run dev
-```
-
-## 🔧 Configuração do Supabase
-
-1. Crie uma conta no [Supabase](https://supabase.com)
-2. Crie um novo projeto
-3. Configure as tabelas necessárias:
-   - `properties`
-   - `property_features`
-   - `property_images`
-4. Configure as políticas de segurança RLS
-5. Configure o storage para upload de imagens
-6. Copie as credenciais para o arquivo `.env`
+### 🔍 Busca e Filtros
+- 🔎 Busca por localização
+- 🏷️ Filtro por tipo (venda/aluguel)
+- 💰 Ordenação por preço
+- 📅 Ordenação por data de publicação
 
 ## 📱 Responsividade
-O projeto é totalmente responsivo e funciona em:
+A plataforma funciona perfeitamente em:
 - 📱 Smartphones
 - 💻 Tablets
 - 🖥️ Desktops
 
-## 🚀 Deploy
-O projeto está configurado para deploy automático no Netlify.
+## 🌟 Destaques
+- ✨ Interface moderna e intuitiva
+- 🚀 Carregamento rápido
+- 🔒 Sistema seguro e confiável
+- 📊 Painel administrativo completo
+- 🎨 Design responsivo e elegante
 
-## 🤝 Contribuindo
-Contribuições são sempre bem-vindas! Para contribuir:
-
-1. Faça um Fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 👥 Autores
-- Luis Felipe - [@luisfsill](https://github.com/luisfsill)
-
-## 🙏 Agradecimentos
-- [Supabase](https://supabase.com)
-- [React](https://reactjs.org)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Framer Motion](https://www.framer.com/motion/) 
+---
+**Desenvolvido por Luis Felipe** 
