@@ -1,14 +1,15 @@
-# 🏠 Alugue-Escarpas - Plataforma de Anúncios Imobiliários
+# 🏠 Alugue-imoveis - Plataforma de Anúncios Imobiliários
 
 ## 📝 Sobre o Projeto
-Alugue-Escarpas é uma plataforma moderna e intuitiva para anúncios imobiliários, desenvolvida com React e TypeScript. A plataforma permite que corretores e administradores gerenciem imóveis para venda e aluguel de forma eficiente.
+Alugue-imoveis é uma plataforma moderna e intuitiva para anúncios imobiliários, desenvolvida com React e TypeScript. A plataforma permite que corretores e administradores gerenciem imóveis para venda e aluguel de forma eficiente.
 
 ## ✨ Funcionalidades Principais
 
 ### 👤 Área do Usuário
-- 🔐 Sistema de autenticação seguro
+- 🔐 Sistema de autenticação seguro com Supabase
 - 👥 Diferentes níveis de acesso (Admin e Corretor)
 - 🚪 Logout seguro
+- 🛡️ Sistema de segurança e rate limiting
 
 ### 🏢 Gestão de Imóveis
 - ➕ Cadastro de novos imóveis
@@ -17,9 +18,10 @@ Alugue-Escarpas é uma plataforma moderna e intuitiva para anúncios imobiliári
 - 📸 Upload de múltiplas imagens (até 12 fotos)
 - 🖼️ Seleção de foto de capa
 - ⭐ Marcação de imóveis em destaque
+- 🔄 Sistema de carrossel de imagens responsivo
 
 ### 📋 Detalhes do Imóvel
-- 💰 Preço (venda ou aluguel)
+- 💰 Preço em Real (R$) para venda ou aluguel
 - 🛏️ Número de quartos
 - 🚿 Número de banheiros
 - 📏 Área em metros quadrados
@@ -40,19 +42,21 @@ Alugue-Escarpas é uma plataforma moderna e intuitiva para anúncios imobiliári
 
 ## 🛠️ Tecnologias Utilizadas
 
-- ⚛️ React
+- ⚛️ React 18
 - 📘 TypeScript
 - 🎨 Tailwind CSS
-- 🔥 Supabase (Backend e Autenticação)
+- 🔥 Supabase (Backend, Auth e Storage)
 - 📱 React Router
 - 🎯 React Hot Toast
 - 🖼️ React Dropzone
+- 🎬 Framer Motion
+- ⚡ Vite
 
 ## 🚀 Como Executar o Projeto
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/luisfsill/Alugue-Escarpas.git
+git clone https://github.com/luisfsill/Alugue-imoveis.git
 ```
 
 2. Instale as dependências:
@@ -61,10 +65,11 @@ npm install
 ```
 
 3. Configure as variáveis de ambiente:
-```bash
-cp .env.example .env
+Crie um arquivo `.env` na raiz do projeto com:
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anonima-aqui
 ```
-Edite o arquivo `.env` com suas credenciais do Supabase.
 
 4. Inicie o projeto:
 ```bash
@@ -77,15 +82,20 @@ npm run dev
 2. Crie um novo projeto
 3. Configure as tabelas necessárias:
    - `properties`
-   - `users`
-4. Configure as políticas de segurança
-5. Copie as credenciais para o arquivo `.env`
+   - `property_features`
+   - `property_images`
+4. Configure as políticas de segurança RLS
+5. Configure o storage para upload de imagens
+6. Copie as credenciais para o arquivo `.env`
 
 ## 📱 Responsividade
 O projeto é totalmente responsivo e funciona em:
 - 📱 Smartphones
 - 💻 Tablets
 - 🖥️ Desktops
+
+## 🚀 Deploy
+O projeto está configurado para deploy automático no Netlify.
 
 ## 🤝 Contribuindo
 Contribuições são sempre bem-vindas! Para contribuir:
@@ -102,4 +112,5 @@ Contribuições são sempre bem-vindas! Para contribuir:
 ## 🙏 Agradecimentos
 - [Supabase](https://supabase.com)
 - [React](https://reactjs.org)
-- [Tailwind CSS](https://tailwindcss.com) 
+- [Tailwind CSS](https://tailwindcss.com)
+- [Framer Motion](https://www.framer.com/motion/) 
