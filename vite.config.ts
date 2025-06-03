@@ -9,20 +9,23 @@ export default defineConfig({
   base: '/',
   server: {
     port: 5173,
-    host: true,
-    proxy: {
-      '/api': 'http://localhost:3000'
-    },
-    middleware: async () => {
-      return [
-        (req, res, next) => {
-          // Serve index.html for all non-asset routes
-          if (!req.url.includes('.')) {
-            req.url = '/';
-          }
-          next();
-        }
-      ];
+    host: 'localhost',
+    cors: {
+      origin: [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        // Adicione aqui seus domínios de desenvolvimento
+      ],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'apikey',
+        'X-Client-Info',
+        'X-Security-Version',
+        'X-Environment'
+      ],
+      credentials: true
     }
   },
   preview: {

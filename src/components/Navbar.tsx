@@ -1,29 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Building2, LogIn, Users, Menu, X } from 'lucide-react';
-import { getUserRole } from '../lib/supabase';
+import { Home, Building2, LogIn, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { getUserRole } from '../lib/supabase';
 
 function Navbar() {
   const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'standard'>('standard');
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Carregar role do usuário
   useEffect(() => {
-    const checkUserRole = async () => {
-      try {
-        const role = await getUserRole();
-        setIsAdmin(role === 'admin');
-      } catch (error) {
-        console.error('Error checking user role:', error);
+    const loadUserRole = async () => {
+      if (user) {
+        try {
+          const role = await getUserRole();
+          setUserRole(role);
+        } catch (error) {
+          console.error('Erro ao carregar role do usuário:', error);
+        }
       }
     };
-
-    if (user) {
-      checkUserRole();
-    }
+    loadUserRole();
   }, [user]);
 
   // Close mobile menu when route changes
@@ -33,20 +33,31 @@ function Navbar() {
 
   const handleLoginClick = () => {
     if (user) {
-      navigate('/admin');
+      // Direcionar para a área correta baseada no role
+      const targetPath = userRole === 'admin' ? '/admin' : '/dashboard';
+      navigate(targetPath);
     } else {
       navigate('/login');
     }
   };
 
+  const getAreaLabel = () => {
+    if (!user) return 'Entrar';
+    return userRole === 'admin' ? 'Área Administrativa' : 'Meus Imóveis';
+  };
+
+  const getAreaPath = () => {
+    if (!user) return '/login';
+    return userRole === 'admin' ? '/admin' : '/dashboard';
+  };
+
   const navItems = [
     { path: '/', icon: Home, label: 'Início' },
     { path: '/properties', icon: Building2, label: 'Imóveis' },
-    ...(user && isAdmin ? [{ path: '/admin/users', icon: Users, label: 'Usuários' }] : []),
     { 
-      path: user ? '/admin' : '/login',
+      path: getAreaPath(),
       icon: LogIn,
-      label: user ? 'Área Administrativa' : 'Entrar',
+      label: getAreaLabel(),
       onClick: handleLoginClick
     }
   ];
@@ -57,10 +68,10 @@ function Navbar() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 cursor-default">
               <Building2 className="h-8 w-8 text-blue-600" />
               <span className="text-xl font-bold text-gray-900">Alugue Escarpas</span>
-            </Link>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex space-x-4">

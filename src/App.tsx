@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
-import { PrivateRoute } from './components/PrivateRoute';
+import { AdminRoute, UserRoute, HighSecurityRoute } from './guards';
+import { CORSMiddleware } from './utils/corsMiddleware';
 import Navbar from './components/Navbar';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
@@ -12,6 +14,11 @@ import UserManagement from './pages/UserManagement';
 import Login from './pages/Login';
 
 function App() {
+  // Inicializar CORS middleware na inicialização da app
+  useEffect(() => {
+    CORSMiddleware.initialize();
+  }, []);
+
   return (
     <Router>
       <AuthProvider>
@@ -23,17 +30,29 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/properties" element={<Properties />} />
               <Route path="/properties/:id" element={<PropertyDetails />} />
-              <Route path="/admin" element={
-                <PrivateRoute>
+              
+              {/* Rota para usuários comuns - apenas seus próprios imóveis */}
+              <Route path="/dashboard" element={
+                <UserRoute>
                   <AdminDashboard />
-                </PrivateRoute>
+                </UserRoute>
               } />
+              
+              {/* Rota administrativa - apenas para admins */}
+              <Route path="/admin" element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } />
+              
               <Route path="/admin/users" element={
-                <PrivateRoute>
+                <HighSecurityRoute>
                   <UserManagement />
-                </PrivateRoute>
+                </HighSecurityRoute>
               } />
+              
               <Route path="/login" element={<Login />} />
+              
               {/* Catch-all route - redirect to home */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

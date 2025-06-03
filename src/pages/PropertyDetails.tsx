@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { sanitizeHTML, sanitizeForURL } from '../utils/sanitize';
 import { ImageGallery } from '../components/ImageGallery';
 import { 
   Bed, 
@@ -16,7 +17,7 @@ import {
   ArrowLeft 
 } from 'lucide-react';
 import { FaSwimmingPool } from "react-icons/fa";
-import { getProperty } from '../services/api';
+import { getProperty } from '../services';
 import type { Property } from '../types/property';
 
 function PropertyDetails() {
@@ -55,7 +56,8 @@ function PropertyDetails() {
 
   const getWhatsAppLink = (phone: string) => {
     const numericPhone = phone.replace(/\D/g, '');
-    return `https://wa.me/55${numericPhone}?text=Olá! Vi seu anúncio do imóvel "${property?.title}" e gostaria de mais informações.`;
+    const safeTitle = sanitizeForURL(property?.title || 'imóvel');
+    return `https://wa.me/55${numericPhone}?text=Olá! Vi seu anúncio do imóvel "${safeTitle}" e gostaria de mais informações.`;
   };
 
   if (isLoading) {
@@ -135,7 +137,12 @@ function PropertyDetails() {
             {/* Description */}
             <div>
               <h2 className="text-xl sm:text-2xl font-semibold mb-4">Descrição</h2>
-              <pre className="text-gray-600 leading-relaxed whitespace-pre-wrap font-sans">{property.description}</pre>
+              <pre 
+                className="text-gray-600 leading-relaxed whitespace-pre-wrap font-sans"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeHTML(property.description)
+                }}
+              />
             </div>
             {/* Features */}
             <div>

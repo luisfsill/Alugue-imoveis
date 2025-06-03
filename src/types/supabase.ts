@@ -21,8 +21,10 @@ export interface Database {
           bathrooms: number
           area: number
           is_featured: boolean
+          cover_photo_index: number
           broker_phone: string | null
           broker_email: string | null
+          user_id: string
           created_at: string
           updated_at: string
         }
@@ -37,8 +39,10 @@ export interface Database {
           bathrooms: number
           area: number
           is_featured?: boolean
+          cover_photo_index?: number
           broker_phone?: string | null
           broker_email?: string | null
+          user_id: string
           created_at?: string
           updated_at?: string
         }
@@ -53,8 +57,10 @@ export interface Database {
           bathrooms?: number
           area?: number
           is_featured?: boolean
+          cover_photo_index?: number
           broker_phone?: string | null
           broker_email?: string | null
+          user_id?: string
           created_at?: string
           updated_at?: string
         }

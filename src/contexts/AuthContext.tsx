@@ -1,49 +1,34 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { useAuth as useAdvancedAuth } from '../hooks/useAuth';
 
-export interface AuthContextType {
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isTokenExpiring?: boolean;
+  signOut: () => Promise<void>;
+  refreshToken: () => Promise<boolean>;
+  getTokenInfo: () => any;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, isLoading: true });
+const AuthContext = createContext<AuthContextType>({ 
+  user: null, 
+  isLoading: true,
+  signOut: async () => {},
+  refreshToken: async () => false,
+  getTokenInfo: () => null
+});
 
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-
-  return context;
-}
-
-const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const auth = useAdvancedAuth();
 
   return (
-    <AuthContext.Provider value={{ user, isLoading }}>
+    <AuthContext.Provider value={auth}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export { AuthContext, AuthProvider };
+export function useAuth() {
+  return useContext(AuthContext);
+}

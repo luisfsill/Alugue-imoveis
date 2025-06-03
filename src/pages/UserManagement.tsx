@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Trash2, Plus, X, LogOut, ArrowLeft, Edit2, AlertTriangle } from 'lucide-react';
 import { supabase, getUserRole, signUp, signOut } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useSession } from '@supabase/auth-helpers-react';
+import { useRateLimit } from '../hooks/useRateLimit';
+import { RateLimitStatus } from '../guards';
+import { useBotDetectionForForm } from '../hooks/useBotDetection';
 
 interface User {
   id: string;
@@ -18,26 +21,26 @@ interface NewUser {
   role: 'admin' | 'standard';
 }
 
+interface EditUser {
+  id: string;
+  email: string;
+  password: string;
+}
+
 interface DeleteConfirmation {
   show: boolean;
   userId: string;
   userEmail: string;
 }
 
-interface UserData {
-  id: string;
-  email: string;
-  role: string;
-  created_at: string;
-}
-
 function UserManagement() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
     show: false,
@@ -49,6 +52,33 @@ function UserManagement() {
     password: '',
     role: 'standard'
   });
+  const [editUser, setEditUser] = useState<EditUser>({
+    id: '',
+    email: '',
+    password: ''
+  });
+  const session = useSession();
+
+  // Rate limiting para criação de usuários
+  const {
+    isBlocked: isCreateBlocked,
+    remainingAttempts: createRemainingAttempts,
+    timeRemaining: createTimeRemaining,
+    checkAllowed: checkCreateAllowed,
+    recordAttempt: recordCreateAttempt,
+    reset: resetCreateLimit
+  } = useRateLimit('user_creation', {
+    maxAttempts: 3,           // 3 criações
+    windowMs: 60 * 60 * 1000, // em 1 hora
+    blockDurationMs: 2 * 60 * 60 * 1000 // bloquear por 2 horas
+  });
+
+  // Bot detection para formulário de criação de usuários
+  const {
+    validateFormSubmission,
+    isBot,
+    confidence
+  } = useBotDetectionForForm('user-creation');
 
   useEffect(() => {
     const initialize = async () => {
@@ -63,14 +93,14 @@ function UserManagement() {
         const { data, error } = await supabase.rpc('list_users');
         if (error) throw error;
 
-        setUsers(data.map((userData: UserData) => ({
-          id: userData.id,
-          email: userData.email,
-          role: userData.role as 'admin' | 'standard' || 'standard',
-          created_at: userData.created_at
+        setUsers(data.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          role: user.role || 'standard',
+          created_at: user.created_at
         })));
 
-        console.log('Usuarios carregados:', data);
+        console.log('Usuarios carregados:', data); // Adicionado log para verificar os dados recebidos
       } catch (error) {
         console.error('Erro ao carregar usuários:', error);
         toast.error('Erro ao carregar usuários');
@@ -84,12 +114,12 @@ function UserManagement() {
   }, [navigate]);
 
   useEffect(() => {
-    if (user) {
-      console.log('Usuário logado:', user.email);
+    if (session?.user) {
+      console.log('Usuário logado:', session.user.email);
     } else {
       console.log('Nenhum usuário logado');
     }
-  }, [user]);
+  }, [session]);
 
   const handleLogout = async () => {
     try {
@@ -153,6 +183,19 @@ function UserManagement() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Verificar bot antes de qualquer validação
+    const botValidation = await validateFormSubmission();
+    if (!botValidation.allowed) {
+      toast.error(botValidation.reason || 'Comportamento suspeito detectado');
+      return;
+    }
+
+    // Verifica rate limiting antes de criar usuário
+    if (!checkCreateAllowed()) {
+      toast.error(`Muitas tentativas de criação. Tente novamente em ${createTimeRemaining}`);
+      return;
+    }
+
     if (!newUser.email || !newUser.password) {
       toast.error('Por favor, preencha todos os campos');
       return;
@@ -161,10 +204,24 @@ function UserManagement() {
     try {
       setIsCreating(true);
 
+      // Log de segurança
+      console.log('🔐 Criação de usuário:', {
+        email: newUser.email,
+        role: newUser.role,
+        botCheck: {
+          isBot,
+          confidence,
+          validated: botValidation.allowed
+        }
+      });
+
       // Chamada para signUp com logging adicional
       console.log('Chamando signUp com:', newUser);
       await signUp(newUser.email, newUser.password, newUser.role);
       console.log('Usuário criado com sucesso');
+
+      // Criação bem-sucedida, reseta o rate limiting
+      resetCreateLimit();
 
       // Adicionar o novo usuário à lista de usuários localmente
       const newUserEntry = {
@@ -181,10 +238,31 @@ function UserManagement() {
       toast.success('Usuário criado com sucesso!');
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
-      if (error instanceof Error) {
-        toast.error(error.message);
+      
+      // Registra tentativa falhada
+      recordCreateAttempt();
+      
+      // Log de segurança para tentativas suspeitas
+      if (isBot) {
+        console.warn('🚨 Tentativa suspeita de criação de usuário:', {
+          email: newUser.email,
+          botConfidence: confidence,
+          error: error instanceof Error ? error.message : 'Erro desconhecido'
+        });
+      }
+      
+      if (isCreateBlocked) {
+        toast.error(`Limite de criação excedido. Tente novamente em ${createTimeRemaining}`);
       } else {
-        toast.error('Erro ao criar usuário');
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error('Erro ao criar usuário');
+        }
+        
+        if (createRemainingAttempts <= 1) {
+          toast.error(`${createRemainingAttempts} tentativa(s) restante(s) antes do bloqueio`);
+        }
       }
       console.log('Erro detalhado:', error);
     } finally {
@@ -192,179 +270,245 @@ function UserManagement() {
     }
   };
 
-  const handleEditClick = () => {
-    // Implementar lógica de edição aqui se necessário
-    toast.success('Funcionalidade de edição em desenvolvimento');
+  const handleEditClick = (user: User) => {
+    setEditUser({
+      id: user.id,
+      email: user.email,
+      password: ''
+    });
+    setShowEditModal(true);
   };
 
-  return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <Link 
-            to="/admin" 
-            className="text-gray-600 hover:text-gray-800 flex items-center gap-2 mb-2 sm:mb-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Voltar
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            Gerenciar Usuários
-          </h1>
-        </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Novo Usuário
-          </button>
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center"
-          >
-            <LogOut className="w-5 h-5 mr-2" />
-            Sair
-          </button>
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsEditing(true);
+
+      // Atualizar email se mudou
+      if (editUser.email !== users.find(u => u.id === editUser.id)?.email) {
+        const { error: emailError } = await supabase.rpc('update_user_email', {
+          user_id: editUser.id,
+          new_email: editUser.email
+        });
+        if (emailError) throw emailError;
+      }
+
+      // Atualizar senha se foi fornecida
+      if (editUser.password) {
+        const { error: passwordError } = await supabase.rpc('update_user_password', {
+          user_id: editUser.id,
+          new_password: editUser.password
+        });
+        if (passwordError) throw passwordError;
+      }
+
+      // Atualizar estado local
+      setUsers(prev => prev.map(user => 
+        user.id === editUser.id ? { ...user, email: editUser.email } : user
+      ));
+
+      toast.success('Usuário atualizado com sucesso!');
+      setShowEditModal(false);
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Erro ao atualizar usuário');
+      }
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <svg className="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-600">Carregando usuários...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Users List */}
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-48">
-            <div className="flex flex-col items-center">
-              <svg className="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p className="text-gray-600">Carregando usuários...</p>
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Header responsivo */}
+      <header className="text-white p-4 md:p-6">
+        <div className="flex flex-col space-y-4 lg:flex-row lg:justify-between lg:items-center lg:space-y-0">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+              <Link
+                to="/admin"
+                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors text-sm md:text-base px-2 py-1 rounded-lg hover:bg-blue-50 w-fit"
+              >
+                <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                <span>Voltar</span>
+              </Link>
+              <h1 className="text-2xl md:text-3xl font-bold text-black">Gerenciar Usuários</h1>
             </div>
+            <RateLimitStatus action="route_access__admin_users" />
+          </div>
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-red-700 flex items-center justify-center text-sm md:text-base"
+            >
+              <LogOut className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+              Sair
+            </button>
+          </div>
         </div>
-        ) : users.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">
-            Nenhum usuário cadastrado.
-          </p>
-        ) : (
-          <>
-            {/* Versão Mobile - Cards */}
-            <div className="block md:hidden space-y-4">
+      </header>
+
+      {/* Main Content */}
+      <main className="p-4 md:p-6 flex-1">
+        {/* Controles superiores */}
+        <div className="flex justify-center sm:justify-start mb-6">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center text-sm md:text-base w-full sm:w-auto max-w-xs"
+          >
+            <Plus className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+            Criar Usuário
+          </button>
+        </div>
+
+        {/* Tabela responsiva */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Função
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Data de Criação
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users.map(user => (
+                  <tr key={user.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{user.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
+                        className="text-sm text-gray-900 border rounded-md px-2 py-1"
+                      >
+                        <option value="standard">Usuário Padrão</option>
+                        <option value="admin">Administrador</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex justify-end space-x-4">
+                        <button
+                          onClick={() => handleEditClick(user)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded-full"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(user.id, user.email)}
+                          className="text-red-600 hover:text-red-800 transition-colors p-1 hover:bg-red-50 rounded-full"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile/Tablet cards */}
+          <div className="md:hidden">
+            <div className="space-y-4 p-4">
               {users.map(user => (
-                <div key={user.id} className="bg-white border rounded-lg p-4 space-y-3">
-                  <div className="flex flex-col space-y-1">
-                    <span className="font-medium text-base">{user.email}</span>
-                    <span className="text-sm text-gray-500">
-                      Criado em: {new Date(user.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-3">
-                    <div className="w-full">
-                      <label className="block text-sm text-gray-500 mb-1">Função:</label>
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
-                        className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="standard">Padrão</option>
-                      <option value="admin">Administrador</option>
-                    </select>
+                <div key={user.id} className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex flex-col space-y-2">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</label>
+                      <div className="text-sm text-gray-900 break-all">{user.email}</div>
                     </div>
                     
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleEditClick}
-                        className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Função</label>
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
+                        className="w-full text-sm text-gray-900 border rounded-md px-2 py-1 mt-1"
                       >
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(user.id, user.email)}
-                        className="flex-1 flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </button>
+                        <option value="standard">Usuário Padrão</option>
+                        <option value="admin">Administrador</option>
+                      </select>
                     </div>
+                    
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Criação</label>
+                      <div className="text-sm text-gray-900">
+                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-3 pt-2 border-t border-gray-200">
+                    <button
+                      onClick={() => handleEditClick(user)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors p-2 hover:bg-blue-50 rounded-lg flex items-center text-sm"
+                    >
+                      <Edit2 className="w-4 h-4 mr-1" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(user.id, user.email)}
+                      className="text-red-600 hover:text-red-800 transition-colors p-2 hover:bg-red-50 rounded-lg flex items-center text-sm"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Excluir
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Versão Desktop - Tabela */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr className="text-left text-sm text-gray-500">
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Data de Criação</th>
-                    <th className="px-4 py-3">Função</th>
-                    <th className="px-4 py-3">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {users.map(user => (
-                    <tr key={user.id} className="text-sm hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className="font-medium">{user.email}</span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-gray-500">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'standard')}
-                          className="w-auto px-3 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="standard">Padrão</option>
-                          <option value="admin">Administrador</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleEditClick}
-                            className="flex items-center justify-center px-3 py-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4 mr-1" />
-                            <span>Editar</span>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(user.id, user.email)}
-                            className="flex items-center justify-center px-3 py-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-                      >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            <span>Excluir</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          </div>
         </div>
-          </>
-        )}
-      </div>
 
-      {/* Create User Modal */}
+        {/* Modal Criar Usuário - Responsivo */}
         {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-semibold">Novo Usuário</h2>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg md:text-xl font-semibold">Criar Novo Usuário</h2>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 p-1"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
               </div>
-            <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+              <form onSubmit={handleCreateUser} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
@@ -372,8 +516,9 @@ function UserManagement() {
                   <input
                     type="email"
                     value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                    placeholder="Digite o email"
                     required
                   />
                 </div>
@@ -384,10 +529,15 @@ function UserManagement() {
                   <input
                     type="password"
                     value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                    placeholder="Digite a senha"
                     required
+                    minLength={6}
                   />
+                  <p className="mt-1 text-xs md:text-sm text-gray-500">
+                    Mínimo de 6 caracteres
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -395,29 +545,31 @@ function UserManagement() {
                   </label>
                   <select
                     value={newUser.role}
-                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'standard' })}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value as 'admin' | 'standard' }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   >
-                  <option value="standard">Padrão</option>
+                    <option value="standard">Usuário Padrão</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
-                <div className="flex justify-end gap-4 mt-6">
+                <div className="flex flex-col sm:flex-row sm:justify-end gap-3 md:gap-4 mt-6 pt-4 border-t">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    className="w-full sm:w-auto px-4 py-2 text-gray-600 hover:text-gray-800 text-sm md:text-base"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={isCreating}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    className={`w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center text-sm md:text-base ${
+                      isCreating ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
                     {isCreating ? (
                       <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 md:h-5 md:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -433,22 +585,102 @@ function UserManagement() {
           </div>
         )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmation.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-md p-6">
-            <div className="flex items-center mb-4 text-red-600">
-              <AlertTriangle className="w-6 h-6 mr-2" />
-              <h3 className="text-lg font-semibold">Confirmar Exclusão</h3>
+        {/* Modal Editar Usuário - Responsivo */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg md:text-xl font-semibold">Editar Usuário</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-500 hover:text-gray-700 p-1"
+                >
+                  <X className="w-5 h-5 md:w-6 md:h-6" />
+                </button>
+              </div>
+              <form onSubmit={handleEditUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={editUser.email}
+                    onChange={(e) => setEditUser(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                    placeholder="Digite o novo email"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nova Senha (opcional)
+                  </label>
+                  <input
+                    type="password"
+                    value={editUser.password}
+                    onChange={(e) => setEditUser(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                    placeholder="Digite a nova senha"
+                    minLength={6}
+                  />
+                  <p className="mt-1 text-xs md:text-sm text-gray-500">
+                    Deixe em branco para manter a senha atual
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:justify-end gap-3 md:gap-4 mt-6 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="w-full sm:w-auto px-4 py-2 text-gray-600 hover:text-gray-800 text-sm md:text-base"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isEditing}
+                    className={`w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center text-sm md:text-base ${
+                      isEditing ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isEditing ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 md:h-5 md:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar Alterações'
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-            <p className="text-gray-600 mb-6">
-              Tem certeza que deseja excluir o usuário <span className="font-semibold">{deleteConfirmation.userEmail}</span>?
+          </div>
+        )}
+
+        {/* Modal Confirmação de Exclusão - Responsivo */}
+        {deleteConfirmation.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md">
+              <div className="flex items-center justify-center mb-6">
+                <div className="bg-red-100 rounded-full p-3">
+                  <AlertTriangle className="w-6 h-6 md:w-8 md:h-8 text-red-600" />
+                </div>
+              </div>
+              <h2 className="text-lg md:text-xl font-semibold text-center mb-2">Confirmar Exclusão</h2>
+              <p className="text-gray-600 text-center mb-6 text-sm md:text-base">
+                Tem certeza que deseja excluir o usuário <br />
+                <span className="font-semibold break-all">{deleteConfirmation.userEmail}</span>?
+                <br />
                 Esta ação não pode ser desfeita.
               </p>
-            <div className="flex justify-end gap-4">
+              <div className="flex flex-col sm:flex-row sm:justify-center gap-3 md:gap-4">
                 <button
                   onClick={handleDeleteCancel}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="w-full sm:w-auto px-4 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm md:text-base"
                   disabled={isDeleting}
                 >
                   Cancelar
@@ -456,24 +688,27 @@ function UserManagement() {
                 <button
                   onClick={handleDeleteConfirm}
                   disabled={isDeleting}
-                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className={`w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center text-sm md:text-base ${
+                    isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
                   {isDeleting ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 md:h-5 md:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Excluindo...
                     </>
                   ) : (
-                  'Excluir'
+                    'Sim, Excluir'
                   )}
                 </button>
               </div>
             </div>
           </div>
         )}
+      </main>
     </div>
   );
 }
