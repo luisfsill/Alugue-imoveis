@@ -14,6 +14,13 @@ interface ProtectedRouteProps {
   fallbackPath?: string;
 }
 
+// Configuração específica para rotas de alta segurança
+const ADMIN_USERS_RATE_LIMIT = {
+  maxAttempts: process.env.NODE_ENV === 'development' ? 9999 : 10,          // Ilimitado em dev, 10 em produção
+  windowMs: 10 * 60 * 1000, // em 10 minutos  
+  blockDurationMs: process.env.NODE_ENV === 'development' ? 1000 : 30 * 60 * 1000 // 1s em dev, 30min em produção
+} as const;
+
 /**
  * ProtectedRoute - Sistema completo de proteção de rotas
  * 
@@ -90,7 +97,7 @@ export function UserRoute({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * HighSecurityRoute - Rota com rate limiting mais restritivo
+ * HighSecurityRoute - Rota com rate limiting específico para admin_users
  */
 export function HighSecurityRoute({ 
   children, 
@@ -99,16 +106,10 @@ export function HighSecurityRoute({
   children: React.ReactNode;
   requireAdmin?: boolean;
 }) {
-  const restrictiveRateLimit = {
-    maxAttempts: 3,           // Apenas 3 tentativas
-    windowMs: 15 * 60 * 1000, // em 15 minutos
-    blockDurationMs: 60 * 60 * 1000 // bloquear por 1 hora
-  };
-
   return (
     <ProtectedRoute 
       requireAdmin={requireAdmin}
-      customRateLimit={restrictiveRateLimit}
+      customRateLimit={ADMIN_USERS_RATE_LIMIT}
     >
       {children}
     </ProtectedRoute>

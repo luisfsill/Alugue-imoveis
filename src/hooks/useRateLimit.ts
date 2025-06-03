@@ -14,6 +14,7 @@ export function useRateLimit(action: string, config: RateLimitConfig): UseRateLi
   const [isBlocked, setIsBlocked] = useState(false);
   const [remainingAttempts, setRemainingAttempts] = useState(config.maxAttempts);
   const [blockedUntil, setBlockedUntil] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState('');
 
   const formatTimeRemaining = useCallback((timestamp: number): string => {
     const now = Date.now();
@@ -84,6 +85,7 @@ export function useRateLimit(action: string, config: RateLimitConfig): UseRateLi
     setIsBlocked(false);
     setBlockedUntil(0);
     setRemainingAttempts(config.maxAttempts);
+    setTimeRemaining('');
   }, [action, config.maxAttempts]);
 
   // Atualiza status inicial
@@ -93,33 +95,46 @@ export function useRateLimit(action: string, config: RateLimitConfig): UseRateLi
       setIsBlocked(false);
       setBlockedUntil(0);
       setRemainingAttempts(config.maxAttempts);
+      setTimeRemaining('');
       return;
     }
 
     updateStatus();
   }, [updateStatus, config.maxAttempts]);
 
-  // Timer para atualizar tempo restante
+  // Timer para atualizar tempo restante em tempo real
   useEffect(() => {
-    if (!isBlocked || blockedUntil <= 0) return;
+    if (!isBlocked || blockedUntil <= 0) {
+      setTimeRemaining('');
+      return;
+    }
+
+    // Atualizar imediatamente
+    setTimeRemaining(formatTimeRemaining(blockedUntil));
 
     const interval = setInterval(() => {
       const now = Date.now();
+      
       if (now >= blockedUntil) {
+        // Tempo esgotado - desbloquear
         setIsBlocked(false);
         setBlockedUntil(0);
         setRemainingAttempts(config.maxAttempts);
+        setTimeRemaining('');
         clearInterval(interval);
+      } else {
+        // Atualizar tempo restante em tempo real
+        setTimeRemaining(formatTimeRemaining(blockedUntil));
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isBlocked, blockedUntil, config.maxAttempts]);
+  }, [isBlocked, blockedUntil, config.maxAttempts, formatTimeRemaining]);
 
   return {
     isBlocked,
     remainingAttempts,
-    timeRemaining: formatTimeRemaining(blockedUntil),
+    timeRemaining,
     checkAllowed,
     recordAttempt,
     reset
