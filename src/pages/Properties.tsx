@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Building2, Bed, Bath, Square, Search, MapPin } from 'lucide-react';
-import { getProperties } from '../services/api';
+import { getProperties } from '../services';
 import type { Property } from '../types/property';
 
 function Properties() {
@@ -28,7 +28,7 @@ function Properties() {
     loadProperties();
   }, []);
 
-  const filteredAndSortedProperties = useMemo(() => {
+  const filteredAndSortedProperties = React.useMemo(() => {
     let result = [...properties];
     // Aplicar filtros
     result = result.filter(property => {
@@ -58,6 +58,8 @@ function Properties() {
       case 'newest':
         result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
+      default:
+        console.warn('Ordenação inválida:', sortBy);
     }
     return result;
   }, [properties, filterType, searchLocation, sortBy]);
@@ -174,32 +176,35 @@ function Properties() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedProperties.map((property) => (
-            <Link 
+            <div 
               key={property.id}
-              to={`/properties/${property.id}`}
               className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group"
             >
               {/* Property Image */}
-              <div className="relative h-48 sm:h-56">
-                <img
-                  src={property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80'}
-                  alt={property.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
-                  {property.type === 'sale' ? 'Venda' : 'Aluguel'}
-                </div>
-                {property.isFeatured && (
-                  <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm font-medium">
-                    Destaque
+              <Link to={`/properties/${property.id}`}>
+                <div className="relative h-48 sm:h-56">
+                  <img
+                    src={property.images?.[property.coverPhotoIndex || 0] || property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80'}
+                    alt={property.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                    {property.type === 'sale' ? 'Venda' : 'Aluguel'}
                   </div>
-                )}
-              </div>
+                  {property.isFeatured && (
+                    <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                      Destaque
+                    </div>
+                  )}
+                </div>
+              </Link>
               {/* Property Details */}
               <div className="p-4">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                  {property.title}
-                </h2>
+                <Link to={`/properties/${property.id}`}>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {property.title}
+                  </h2>
+                </Link>
                 <div className="flex items-center text-gray-600 mb-4">
                   <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="truncate">{property.location}</span>
@@ -218,20 +223,18 @@ function Properties() {
                     <span className="text-sm text-gray-600">{property.area}m²</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center text-blue-600 font-bold text-xl">
-                    <span className="mr-1">R$</span>
-                    {property.price === 0 && property.type === 'rent' ? 'A consultar!' : property.price.toLocaleString('pt-BR')}
-                  </div>
-                  {property.type === 'rent' && (
-                    <span className="text-gray-600 text-sm">/mês</span>
-                  )}
+                <div className="text-xl font-bold text-blue-600 mb-4">
+                  {property.price === 0 && property.type === 'rent' ? 'A consultar!' : `R$ ${property.price.toLocaleString('pt-BR')}${property.type === 'rent' ? '/mês' : ''}`}
                 </div>
-                <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                  Ver Detalhes
-                </button>
+                {/* Botão Ver mais detalhes */}
+                <Link 
+                  to={`/properties/${property.id}`}
+                  className="block w-full text-center bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  Ver mais detalhes
+                </Link>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

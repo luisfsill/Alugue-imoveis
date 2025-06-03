@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useAnimation, PanInfo } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface Image {
@@ -55,35 +55,26 @@ const thumbnailHoverVariants = {
   }
 };
 
-export function ImageGallery({ images, onClose }: ImageGalleryProps) {
+export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [direction, setDirection] = useState(0);
   const previewCount = 3;
   const controls = useAnimation();
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const handleClose = useCallback(() => {
-    setSelectedIndex(null);
-    setDirection(0);
-    controls.set("center");
-    if (onClose) onClose();
-  }, [onClose, controls]);
-
-  const handleNext = useCallback(() => {
-    if (selectedIndex === null) return;
-    setDirection(1);
-    setSelectedIndex((prev) => 
-      prev === null ? 0 : prev === images.length - 1 ? 0 : prev + 1
-    );
-  }, [selectedIndex, images.length]);
-
-  const handlePrevious = useCallback(() => {
-    if (selectedIndex === null) return;
-    setDirection(-1);
-    setSelectedIndex((prev) => 
-      prev === null ? images.length - 1 : prev === 0 ? images.length - 1 : prev - 1
-    );
-  }, [selectedIndex, images.length]);
+  // Reorganiza as imagens para que a foto de capa seja a primeira
+  const reorderedImages = React.useMemo(() => {
+    if (!images || images.length === 0) return [];
+    
+    const reordered = [...images];
+    if (initialIndex > 0 && initialIndex < images.length) {
+      // Move a foto de capa para o início
+      const coverImage = reordered[initialIndex];
+      reordered.splice(initialIndex, 1);
+      reordered.unshift(coverImage);
+    }
+    return reordered;
+  }, [images, initialIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -106,9 +97,34 @@ export function ImageGallery({ images, onClose }: ImageGalleryProps) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedIndex, handleClose, handleNext, handlePrevious]);
+  }, [selectedIndex]);
 
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
+  // Reset state when modal closes
+  const handleClose = () => {
+    // Reset all state
+    setSelectedIndex(null);
+    setDirection(0);
+    controls.set("center");
+    if (onClose) onClose();
+  };
+
+  const handleNext = () => {
+    if (selectedIndex === null) return;
+    setDirection(1);
+    setSelectedIndex((prev) => 
+      prev === null ? 0 : prev === reorderedImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const handlePrevious = () => {
+    if (selectedIndex === null) return;
+    setDirection(-1);
+    setSelectedIndex((prev) => 
+      prev === null ? reorderedImages.length - 1 : prev === 0 ? reorderedImages.length - 1 : prev - 1
+    );
+  };
+
+  const handleDragEnd = (_e: any, { offset, velocity }: any) => {
     const swipe = offset.x;
     
     if (Math.abs(velocity.x) > 500 || Math.abs(swipe) > 100) {
@@ -126,14 +142,14 @@ export function ImageGallery({ images, onClose }: ImageGalleryProps) {
     <div className="container mx-auto px-4">
       {/* Grid de miniaturas */}
       <div className="grid grid-cols-3 gap-4">
-        {images.slice(0, previewCount).map((image, index) => (
+        {reorderedImages.slice(0, previewCount).map((image, index) => (
           <motion.div
-            key={index}
+            key={`${image.src}-${index}`}
             whileHover="hover"
             variants={thumbnailHoverVariants}
             onClick={() => setSelectedIndex(index)}
             className={`cursor-pointer aspect-square overflow-hidden rounded-lg relative ${
-              index === previewCount - 1 && images.length > previewCount ? 'group' : ''
+              index === previewCount - 1 && reorderedImages.length > previewCount ? 'group' : ''
             }`}
           >
             <img 
@@ -142,11 +158,11 @@ export function ImageGallery({ images, onClose }: ImageGalleryProps) {
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            {index === previewCount - 1 && images.length > previewCount && (
+            {index === previewCount - 1 && reorderedImages.length > previewCount && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity group-hover:bg-black/70">
-                <div className="text-center text-white">
-                  <p className="text-xl font-semibold mb-2">Clique para ver mais</p>
-                  <p className="text-sm">+{images.length - previewCount} fotos</p>
+                <div className="text-center text-white px-2">
+                  <p className="text-sm sm:text-lg md:text-xl font-semibold mb-1 sm:mb-2">Clique para ver mais</p>
+                  <p className="text-xs sm:text-sm">+{reorderedImages.length - previewCount} fotos</p>
                 </div>
               </div>
             )}
@@ -165,31 +181,33 @@ export function ImageGallery({ images, onClose }: ImageGalleryProps) {
             animate="visible"
             exit="exit"
             onClick={(e) => {
+              // Only close if clicking the backdrop
               if (e.target === modalRef.current) {
                 handleClose();
               }
             }}
           >
-            {/* Botão de fechar responsivo */}
-            <div className="absolute top-20 right-20 p-4 sm:p-6 z-50">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClose();
-                }}
-                className="p-2 sm:p-3 rounded-full bg-black/50 hover:bg-black/70 text-white hover:text-red-600 transition-all transform hover:scale-110"
-                aria-label="Fechar galeria"
-              >
-                <X className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" />
-              </button>
+            <div className="absolute top-0 right-0 left-0 h-16 bg-gradient-to-b from-black/50 to-transparent">
             </div>
+
+            {/* Botão de fechar sempre visível */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClose();
+              }}
+              className="absolute top-36 right-8 sm:top-12 sm:right-6 md:top-32 md:right-40 text-white hover:text-white transition-colors p-2 sm:p-2 md:p-3 rounded-full bg-red-500/90 hover:bg-red-600/90 z-[60] shadow-2xl border-2 border-white/20"
+              aria-label="Fechar galeria"
+            >
+              <X className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+            </button>
 
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handlePrevious();
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-40"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-20"
               aria-label="Imagem anterior"
             >
               <ChevronLeft className="w-12 h-12" />
@@ -210,27 +228,29 @@ export function ImageGallery({ images, onClose }: ImageGalleryProps) {
               className="relative w-full h-[calc(100vh-200px)] flex items-center justify-center px-4"
               drag="x"
             >
-              <motion.img
-                key={selectedIndex}
-                src={images[selectedIndex].src}
-                alt={images[selectedIndex].alt}
-                className="max-h-full max-w-full object-contain select-none"
-                variants={imageVariants}
-                custom={direction}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={1}
-                onDragEnd={handleDragEnd}
-              />
+              <div className="relative">
+                <motion.img
+                  key={selectedIndex}
+                  src={reorderedImages[selectedIndex].src}
+                  alt={reorderedImages[selectedIndex].alt}
+                  className="max-h-full max-w-full object-contain select-none"
+                  variants={imageVariants}
+                  custom={direction}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={1}
+                  onDragEnd={handleDragEnd}
+                />
+              </div>
             </motion.div>
 
             {/* Thumbnails */}
             <div className="absolute bottom-4 left-0 right-0">
               <div className="flex justify-center space-x-2 px-4">
-                {images.map((_, index) => (
+                {reorderedImages.map((_, index) => (
                   <button
                     key={index}
                     onClick={(e) => {

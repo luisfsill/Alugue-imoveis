@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Building2, MapPin, DollarSign, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Building2, MapPin, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getFeaturedProperties } from '../services/api';
+import { getFeaturedProperties } from '../services';
 import type { Property } from '../types/property';
 import { Bed, Bath, Square } from 'lucide-react';
 
@@ -19,8 +19,8 @@ function Home() {
       try {
         const properties = await getFeaturedProperties();
         setFeaturedProperties(properties);
-        // Inicializa o índice da imagem atual para cada propriedade
-        setCurrentImageIndexes(new Array(properties.length).fill(0));
+        // Inicializa o índice da imagem atual para cada propriedade, começando pela foto de capa
+        setCurrentImageIndexes(properties.map(property => property.coverPhotoIndex || 0));
       } catch (error) {
         console.error('Erro ao carregar imóveis em destaque:', error);
       } finally {
@@ -187,10 +187,10 @@ function Home() {
                       </div>
                     )}
                   </div>
-                  <h3 className="text-xl font-bold mb-2 line-clamp-1">{property.title}</h3>
+                  <h3 className="text-xl font-bold mb-2">{property.title}</h3>
                   <div className="flex items-center text-gray-600 mb-3">
                     <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                    <span className="text-sm line-clamp-1">{property.location}</span>
+                    <span className="text-sm">{property.location}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mb-4 text-center">
                     <div className="bg-gray-50 p-2 rounded-lg">
@@ -209,8 +209,8 @@ function Home() {
                   <div className="text-xl font-bold text-blue-600 mb-4">
                     {property.price === 0 && property.type === 'rent' ? 'A consultar!' : `R$ ${property.price.toLocaleString('pt-BR')}${property.type === 'rent' ? '/mês' : ''}`}
                   </div>
-                  <Link to={`/properties/${property.id}`} className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                    Ver Detalhes
+                  <Link to={`/properties/${property.id}`} className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold">
+                    Ver mais detalhes
                   </Link>
                 </div>
               ))}
@@ -239,7 +239,7 @@ function Home() {
                   <span>Destaque regional para seu imóvel</span>
                 </li>
                 <li className="flex items-center space-x-3">
-                  <DollarSign className="w-6 h-6 flex-shrink-0 text-red-400" />
+                  <span className="w-6 h-6 flex-shrink-0 text-red-400 font-bold">R$</span>
                   <span>Melhor retorno do mercado</span>
                 </li>
               </ul>
@@ -281,7 +281,7 @@ function Home() {
             <p className="text-gray-600">Imóveis nos bairros mais desejados</p>
           </div>
           <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <DollarSign className="w-12 h-12 mx-auto text-blue-600 mb-4" />
+            <span className="w-12 h-12 mx-auto text-blue-600 mb-4 flex items-center justify-center text-2xl font-bold">R$</span>
             <h3 className="text-xl font-semibold mb-2">Melhores Preços do Mercado</h3>
             <p className="text-gray-600">Preços competitivos para venda e locação</p>
           </div>
