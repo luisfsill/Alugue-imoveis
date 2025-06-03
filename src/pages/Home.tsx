@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Building2, MapPin, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Building2, MapPin, ChevronLeft, ChevronRight, Search, CircleDollarSign } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFeaturedProperties } from '../services';
@@ -239,7 +239,7 @@ function Home() {
                   <span>Destaque regional para seu imóvel</span>
                 </li>
                 <li className="flex items-center space-x-3">
-                  <span className="w-6 h-6 flex-shrink-0 text-red-400 font-bold">R$</span>
+                  <CircleDollarSign className="w-6 h-6 flex-shrink-0 text-red-400" />
                   <span>Melhor retorno do mercado</span>
                 </li>
               </ul>
@@ -281,7 +281,7 @@ function Home() {
             <p className="text-gray-600">Imóveis nos bairros mais desejados</p>
           </div>
           <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <span className="w-12 h-12 mx-auto text-blue-600 mb-4 flex items-center justify-center text-2xl font-bold">R$</span>
+            <CircleDollarSign className="w-12 h-12 mx-auto text-blue-600 mb-4" />
             <h3 className="text-xl font-semibold mb-2">Melhores Preços do Mercado</h3>
             <p className="text-gray-600">Preços competitivos para venda e locação</p>
           </div>
