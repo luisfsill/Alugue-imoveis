@@ -7,6 +7,21 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   base: '/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react', 'react-hot-toast'],
+          supabase: ['@supabase/supabase-js', '@supabase/auth-helpers-react'],
+          utils: ['js-sha256', 'dompurify']
+        }
+      }
+    },
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000
+  },
   server: {
     port: 5173,
     host: 'localhost',

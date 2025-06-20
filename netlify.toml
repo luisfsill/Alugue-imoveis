@@ -2,11 +2,31 @@
   command = "npm run build"
   publish = "dist"
   
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = true
-
 [build.environment]
   NODE_VERSION = "20"
+  NPM_FLAGS = "--no-optional"
+  CI = "false"
+
+# As configurações de redirect agora estão no arquivo _redirects
+
+# Configurações de performance
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+# Configurações específicas para branches
+[context.production.environment]
+  NODE_ENV = "production"
+
+[context.deploy-preview.environment]
+  NODE_ENV = "preview"

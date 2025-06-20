@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useImageLoader } from '../hooks/useImageLoader';
 
 interface Image {
   src: string;
@@ -61,6 +62,7 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
   const previewCount = 3;
   const controls = useAnimation();
   const modalRef = useRef<HTMLDivElement>(null);
+  const imageRefs = useRef<Map<number, HTMLImageElement>>(new Map());
 
   // Reorganiza as imagens para que a foto de capa seja a primeira
   const reorderedImages = React.useMemo(() => {
@@ -75,6 +77,14 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
     }
     return reordered;
   }, [images, initialIndex]);
+
+  const {
+    currentIndex,
+    isImageLoading,
+    goToImage,
+    nextImage,
+    prevImage
+  } = useImageLoader(reorderedImages, 0);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -108,21 +118,17 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
     if (onClose) onClose();
   };
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (selectedIndex === null) return;
     setDirection(1);
-    setSelectedIndex((prev) => 
-      prev === null ? 0 : prev === reorderedImages.length - 1 ? 0 : prev + 1
-    );
-  };
+    nextImage();
+  }, [selectedIndex, nextImage]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (selectedIndex === null) return;
     setDirection(-1);
-    setSelectedIndex((prev) => 
-      prev === null ? reorderedImages.length - 1 : prev === 0 ? reorderedImages.length - 1 : prev - 1
-    );
-  };
+    prevImage();
+  }, [selectedIndex, prevImage]);
 
   const handleDragEnd = (_e: any, { offset, velocity }: any) => {
     const swipe = offset.x;
@@ -138,6 +144,12 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
     }
   };
 
+  const handleThumbnailClick = useCallback((index: number) => {
+    setDirection(index > (selectedIndex || 0) ? 1 : -1);
+    setSelectedIndex(index);
+    goToImage(index);
+  }, [selectedIndex, goToImage]);
+
   return (
     <div className="container mx-auto px-4">
       {/* Grid de miniaturas */}
@@ -147,7 +159,7 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
             key={`${image.src}-${index}`}
             whileHover="hover"
             variants={thumbnailHoverVariants}
-            onClick={() => setSelectedIndex(index)}
+            onClick={() => handleThumbnailClick(index)}
             className={`cursor-pointer aspect-square overflow-hidden rounded-lg relative ${
               index === previewCount - 1 && reorderedImages.length > previewCount ? 'group' : ''
             }`}
@@ -156,7 +168,7 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
               src={image.src} 
               alt={image.alt}
               className="w-full h-full object-cover"
-              loading="lazy"
+              loading="eager"
             />
             {index === previewCount - 1 && reorderedImages.length > previewCount && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity group-hover:bg-black/70">
@@ -171,7 +183,7 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
       </div>
 
       {/* Modal */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedIndex !== null && (
           <motion.div 
             ref={modalRef}
@@ -196,7 +208,7 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
                 e.stopPropagation();
                 handleClose();
               }}
-              className="absolute top-36 right-8 sm:top-12 sm:right-6 md:top-32 md:right-40 text-white hover:text-white transition-colors p-2 sm:p-2 md:p-3 rounded-full bg-red-500/90 hover:bg-red-600/90 z-[60] shadow-2xl border-2 border-white/20"
+              className="absolute top-20 right-8 sm:top-12 sm:right-6 md:top-32 md:right-40 text-white hover:text-white transition-colors p-2 sm:p-2 md:p-3 rounded-full bg-red-500/90 hover:bg-red-600/90 z-[60] shadow-2xl border-2 border-white/20"
               aria-label="Fechar galeria"
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
@@ -229,10 +241,15 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
               drag="x"
             >
               <div className="relative">
+                {isImageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                  </div>
+                )}
                 <motion.img
-                  key={selectedIndex}
-                  src={reorderedImages[selectedIndex].src}
-                  alt={reorderedImages[selectedIndex].alt}
+                  key={`${currentIndex}-${reorderedImages[currentIndex]?.src}`}
+                  src={reorderedImages[currentIndex]?.src}
+                  alt={reorderedImages[currentIndex]?.alt}
                   className="max-h-full max-w-full object-contain select-none"
                   variants={imageVariants}
                   custom={direction}
@@ -243,6 +260,11 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
                   dragConstraints={{ left: 0, right: 0 }}
                   dragElastic={1}
                   onDragEnd={handleDragEnd}
+                  ref={(el) => {
+                    if (el) {
+                      imageRefs.current.set(currentIndex, el);
+                    }
+                  }}
                 />
               </div>
             </motion.div>
@@ -255,11 +277,10 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
                     key={index}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDirection(index > selectedIndex ? 1 : -1);
-                      setSelectedIndex(index);
+                      handleThumbnailClick(index);
                     }}
                     className={`w-2 h-2 rounded-full transition-all ${
-                      index === selectedIndex 
+                      index === currentIndex 
                         ? 'bg-white scale-125' 
                         : 'bg-gray-500 hover:bg-gray-400'
                     }`}

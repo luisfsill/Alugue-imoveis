@@ -66,14 +66,8 @@ function Navbar() {
     <>
       <nav className="fixed top-0 left-0 right-0 bg-white shadow-md z-[90]">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center space-x-2 cursor-default">
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">Alugue Escarpas</span>
-            </div>
-
-            {/* Desktop Navigation */}
+          <div className="flex items-center justify-center h-16">
+            {/* Desktop Navigation - Centralizado */}
             <div className="hidden md:flex space-x-4">
               {navItems.map((item) => (
                 <Link
@@ -92,10 +86,10 @@ function Navbar() {
               ))}
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Posicionado à direita */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="md:hidden absolute right-4 p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {isMobileMenuOpen ? (
                 <X className="h-6 w-6" />

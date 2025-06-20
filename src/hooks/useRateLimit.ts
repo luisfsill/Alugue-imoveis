@@ -30,14 +30,6 @@ export function useRateLimit(action: string, config: RateLimitConfig): UseRateLi
   }, []);
 
   const updateStatus = useCallback(() => {
-    // 🔧 DESENVOLVIMENTO: Sempre permitir acesso
-    if (process.env.NODE_ENV === 'development') {
-      return {
-        allowed: true,
-        remainingAttempts: config.maxAttempts
-      };
-    }
-
     const status = rateLimiter.check(action, config);
     
     if (!status.allowed && status.blockedUntil) {
@@ -54,33 +46,35 @@ export function useRateLimit(action: string, config: RateLimitConfig): UseRateLi
   }, [action, config]);
 
   const checkAllowed = useCallback((): boolean => {
-    // 🔧 DESENVOLVIMENTO: Sempre permitir
-    if (process.env.NODE_ENV === 'development') {
-      return true;
-    }
-
     const status = updateStatus();
     return status.allowed;
   }, [updateStatus]);
 
   const recordAttempt = useCallback(() => {
-    // 🔧 DESENVOLVIMENTO: Não registrar tentativas
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔧 DESENVOLVIMENTO: Tentativa não registrada para '${action}'`);
-      return;
-    }
-
+    console.log(`📝 useRateLimit: Registrando tentativa para '${action}'`);
     rateLimiter.record(action, config);
-    updateStatus();
-  }, [action, config, updateStatus]);
+    
+    // Atualizar status diretamente sem chamar updateStatus novamente
+    const status = rateLimiter.check(action, config);
+    
+    if (!status.allowed && status.blockedUntil) {
+      setIsBlocked(true);
+      setBlockedUntil(status.blockedUntil);
+      setRemainingAttempts(0);
+    } else {
+      setIsBlocked(false);
+      setBlockedUntil(0);
+      setRemainingAttempts(status.remainingAttempts);
+    }
+    
+    console.log(`📊 useRateLimit: Status após tentativa para '${action}':`, {
+      allowed: status.allowed,
+      remainingAttempts: status.remainingAttempts,
+      blockedUntil: status.blockedUntil
+    });
+  }, [action, config]);
 
   const reset = useCallback(() => {
-    // 🔧 DESENVOLVIMENTO: Reset sempre disponível
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔧 DESENVOLVIMENTO: Reset solicitado para '${action}'`);
-      return;
-    }
-
     rateLimiter.reset(action);
     setIsBlocked(false);
     setBlockedUntil(0);
@@ -90,17 +84,8 @@ export function useRateLimit(action: string, config: RateLimitConfig): UseRateLi
 
   // Atualiza status inicial
   useEffect(() => {
-    // 🔧 DESENVOLVIMENTO: Manter valores padrão
-    if (process.env.NODE_ENV === 'development') {
-      setIsBlocked(false);
-      setBlockedUntil(0);
-      setRemainingAttempts(config.maxAttempts);
-      setTimeRemaining('');
-      return;
-    }
-
     updateStatus();
-  }, [updateStatus, config.maxAttempts]);
+  }, [updateStatus]);
 
   // Timer para atualizar tempo restante em tempo real
   useEffect(() => {

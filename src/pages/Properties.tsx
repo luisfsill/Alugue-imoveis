@@ -101,13 +101,13 @@ function Properties() {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="relative bg-blue-600 text-white py-12 -mx-4 px-4 sm:-mx-0 sm:rounded-lg overflow-hidden">
+      <div className="relative bg-blue-600 text-white py-8 md:py-12 -mx-4 px-4 sm:-mx-0 sm:rounded-lg overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-800 opacity-90"></div>
         <div className="relative max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">
             Encontre o Imóvel Perfeito
           </h1>
-          <p className="text-lg text-blue-100 mb-8">
+          <p className="text-base md:text-lg lg:text-xl text-blue-100 mb-6 md:mb-8">
             Explore nossa seleção de imóveis para venda e aluguel
           </p>
         </div>
@@ -182,28 +182,28 @@ function Properties() {
             >
               {/* Property Image */}
               <Link to={`/properties/${property.id}`}>
-                <div className="relative h-48 sm:h-56">
-                  <img
-                    src={property.images?.[property.coverPhotoIndex || 0] || property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80'}
-                    alt={property.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
-                    {property.type === 'sale' ? 'Venda' : 'Aluguel'}
-                  </div>
-                  {property.isFeatured && (
-                    <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm font-medium">
-                      Destaque
-                    </div>
-                  )}
+              <div className="relative h-48 sm:h-56">
+                <img
+                  src={property.images?.[property.coverPhotoIndex || 0] || property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80'}
+                  alt={property.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                  {property.type === 'sale' ? 'Venda' : 'Aluguel'}
                 </div>
+                {property.isFeatured && (
+                  <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                    Destaque
+                  </div>
+                )}
+              </div>
               </Link>
               {/* Property Details */}
               <div className="p-4">
                 <Link to={`/properties/${property.id}`}>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {property.title}
-                  </h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                  {property.title}
+                </h2>
                 </Link>
                 <div className="flex items-center text-gray-600 mb-4">
                   <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />

@@ -1,1 +1,15 @@
-/*    /index.html   200 
+# Redirecionamentos do Netlify para SPA React
+
+# Rota específica para desbloqueio emergencial
+/emergency-unblock    /index.html   200
+
+# Rotas da aplicação - redirecionar tudo para index.html (SPA)
+/login               /index.html   200
+/admin               /index.html   200
+/admin/*             /index.html   200
+/dashboard           /index.html   200
+/properties          /index.html   200
+/properties/*        /index.html   200
+
+# Catch-all para todas as outras rotas (deve ser a última regra)
+/*                   /index.html   200 

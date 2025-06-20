@@ -12,14 +12,8 @@ interface ProtectedRouteProps {
     blockDurationMs: number;
   };
   fallbackPath?: string;
+  fixedWarning?: boolean;
 }
-
-// Configuração específica para rotas de alta segurança
-const ADMIN_USERS_RATE_LIMIT = {
-  maxAttempts: process.env.NODE_ENV === 'development' ? 9999 : 10,          // Ilimitado em dev, 10 em produção
-  windowMs: 10 * 60 * 1000, // em 10 minutos  
-  blockDurationMs: process.env.NODE_ENV === 'development' ? 1000 : 30 * 60 * 1000 // 1s em dev, 30min em produção
-} as const;
 
 /**
  * ProtectedRoute - Sistema completo de proteção de rotas
@@ -39,7 +33,8 @@ export function ProtectedRoute({
   children, 
   requireAdmin = false,
   customRateLimit,
-  fallbackPath = '/login'
+  fallbackPath = '/login',
+  fixedWarning = false
 }: ProtectedRouteProps) {
   const location = useLocation();
   
@@ -61,6 +56,7 @@ export function ProtectedRoute({
     <RateLimitGuard 
       action={routeAction}
       config={routeRateLimit}
+      fixedWarning={fixedWarning}
     >
       <AuthGuard 
         requireAdmin={requireAdmin}
@@ -77,9 +73,9 @@ export function ProtectedRoute({
 /**
  * AdminRoute - Rota protegida para administradores
  */
-export function AdminRoute({ children }: { children: React.ReactNode }) {
+export function AdminRoute({ children, ...props }: { children: React.ReactNode; [key: string]: any }) {
   return (
-    <ProtectedRoute requireAdmin={true}>
+    <ProtectedRoute requireAdmin={true} {...props}>
       {children}
     </ProtectedRoute>
   );
@@ -97,7 +93,7 @@ export function UserRoute({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * HighSecurityRoute - Rota com rate limiting específico para admin_users
+ * HighSecurityRoute - Rota com rate limiting mais restritivo
  */
 export function HighSecurityRoute({ 
   children, 
@@ -106,10 +102,16 @@ export function HighSecurityRoute({
   children: React.ReactNode;
   requireAdmin?: boolean;
 }) {
+  const restrictiveRateLimit = {
+    maxAttempts: 15,           // 15 tentativas
+    windowMs: 10 * 60 * 1000,  // em 10 minutos
+    blockDurationMs: 30 * 60 * 1000 // bloquear por 30 minutos
+  };
+
   return (
     <ProtectedRoute 
       requireAdmin={requireAdmin}
-      customRateLimit={ADMIN_USERS_RATE_LIMIT}
+      customRateLimit={restrictiveRateLimit}
     >
       {children}
     </ProtectedRoute>

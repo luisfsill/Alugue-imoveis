@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Building2, MapPin, ChevronLeft, ChevronRight, Search, CircleDollarSign } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, MapPin, Search, CircleDollarSign } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getFeaturedProperties } from '../services';
 import type { Property } from '../types/property';
 import { Bed, Bath, Square } from 'lucide-react';
+import { ImageCarousel } from '../components/ImageCarousel';
 
 function Home() {
   const navigate = useNavigate();
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
-  const [currentImageIndexes, setCurrentImageIndexes] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchLocation, setSearchLocation] = useState('');
   const [searchType, setSearchType] = useState<'sale' | 'rent' | ''>('');
@@ -19,8 +18,6 @@ function Home() {
       try {
         const properties = await getFeaturedProperties();
         setFeaturedProperties(properties);
-        // Inicializa o índice da imagem atual para cada propriedade, começando pela foto de capa
-        setCurrentImageIndexes(properties.map(property => property.coverPhotoIndex || 0));
       } catch (error) {
         console.error('Erro ao carregar imóveis em destaque:', error);
       } finally {
@@ -29,30 +26,6 @@ function Home() {
     };
     loadFeaturedProperties();
   }, []);
-
-  const nextImage = useCallback((propertyIndex: number) => {
-    const property = featuredProperties[propertyIndex];
-    if (!property?.images || property.images.length <= 1) return;
-    setCurrentImageIndexes(prev => {
-      const newIndexes = [...prev];
-      const currentIndex = newIndexes[propertyIndex];
-      const imagesLength = property.images.length;
-      newIndexes[propertyIndex] = currentIndex === imagesLength - 1 ? 0 : currentIndex + 1;
-      return newIndexes;
-    });
-  }, [featuredProperties]);
-
-  const prevImage = useCallback((propertyIndex: number) => {
-    const property = featuredProperties[propertyIndex];
-    if (!property?.images || property.images.length <= 1) return;
-    setCurrentImageIndexes(prev => {
-      const newIndexes = [...prev];
-      const currentIndex = newIndexes[propertyIndex];
-      const imagesLength = property.images.length;
-      newIndexes[propertyIndex] = currentIndex === 0 ? imagesLength - 1 : currentIndex - 1;
-      return newIndexes;
-    });
-  }, [featuredProperties]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -70,6 +43,19 @@ function Home() {
 
   return (
     <div className="space-y-8">
+      {/* Header com título e ícone */}
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8 md:py-12 -mx-4 md:mx-0 px-4 md:px-0 md:rounded-lg">
+        <div className="container mx-auto px-4 md:px-4 text-center">
+          <div className="flex items-center justify-center space-x-2 md:space-x-3 mb-3 md:mb-4">
+            <Building2 className="h-8 w-8 md:h-10 md:w-10 text-white" />
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">Alugue Imóveis em Escarpas e Região</h1>
+          </div>
+          <p className="text-base md:text-lg lg:text-xl text-blue-100 max-w-2xl md:max-w-3xl mx-auto">
+            Encontre o imóvel perfeito para você
+          </p>
+        </div>
+      </section>
+
       {/* Search Section */}
       <section className="bg-white shadow-md py-6">
         <div className="container mx-auto px-4">
@@ -139,53 +125,17 @@ function Home() {
                 <div key={propertyIndex} className="bg-white p-4 rounded-lg shadow-md relative group">
                   {/* Carousel de Imagens */}
                   <div className="mb-4">
-                    {property.images.length > 0 && (
-                      <div className="relative overflow-hidden">
-                        <AnimatePresence initial={false} mode="wait">
-                          <motion.img
-                            key={currentImageIndexes[propertyIndex]}
-                          src={property.images[currentImageIndexes[propertyIndex] || 0]}
-                          alt={`${property.title} - Imagem ${(currentImageIndexes[propertyIndex] || 0) + 1}`}
-                            className="rounded-lg w-full h-[200px] object-cover absolute"
-                            initial={{ x: 300, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: -300, opacity: 0 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 30
-                            }}
-                          />
-                        </AnimatePresence>
-                        <div className="relative w-full h-[200px]" />
-                        <div className="absolute top-1/2 left-2 -translate-y-1/2 opacity-0 group-hover:opacity-90 transition-opacity duration-300 z-10">
-                          <motion.button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              prevImage(propertyIndex);
-                            }}
-                            className="rounded-full bg-gray-800/50 p-1.5 hover:bg-gray-800/75 transition-all duration-300"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <ChevronLeft className="w-5 h-5 text-white" />
-                          </motion.button>
-                        </div>
-                        <div className="absolute top-1/2 right-2 -translate-y-1/2 opacity-0 group-hover:opacity-90 transition-opacity duration-300 z-10">
-                          <motion.button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              nextImage(propertyIndex);
-                            }}
-                            className="rounded-full bg-gray-800/50 p-1.5 hover:bg-gray-800/75 transition-all duration-300"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <ChevronRight className="w-5 h-5 text-white" />
-                          </motion.button>
-                        </div>
-                      </div>
-                    )}
+                    <ImageCarousel
+                      images={property.images.map((src, index) => ({
+                        src,
+                        alt: `${property.title} - Imagem ${index + 1}`
+                      }))}
+                      initialIndex={property.coverPhotoIndex || 0}
+                      height="h-[200px]"
+                      showNavigation={true}
+                      autoPlay={false}
+                      className="group"
+                    />
                   </div>
                   <h3 className="text-xl font-bold mb-2">{property.title}</h3>
                   <div className="flex items-center text-gray-600 mb-3">

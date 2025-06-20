@@ -5,7 +5,6 @@ import { Trash2, Plus, X, LogOut, ArrowLeft, Edit2, AlertTriangle } from 'lucide
 import { supabase, getUserRole, signUp, signOut } from '../lib/supabase';
 import { useSession } from '@supabase/auth-helpers-react';
 import { useRateLimit } from '../hooks/useRateLimit';
-import { RateLimitStatus } from '../guards';
 import { useBotDetectionForForm } from '../hooks/useBotDetection';
 
 interface User {
@@ -68,9 +67,9 @@ function UserManagement() {
     recordAttempt: recordCreateAttempt,
     reset: resetCreateLimit
   } = useRateLimit('user_creation', {
-    maxAttempts: 3,           // 3 criações
-    windowMs: 60 * 60 * 1000, // em 1 hora
-    blockDurationMs: 2 * 60 * 60 * 1000 // bloquear por 2 horas
+    maxAttempts: 8,           // 8 criações (aumentado)
+    windowMs: 30 * 60 * 1000, // em 30 minutos (reduzido)
+    blockDurationMs: 15 * 60 * 1000 // bloquear por 15 minutos (muito reduzido)
   });
 
   // Bot detection para formulário de criação de usuários
@@ -351,7 +350,6 @@ function UserManagement() {
               </Link>
               <h1 className="text-2xl md:text-3xl font-bold text-black">Gerenciar Usuários</h1>
             </div>
-            <RateLimitStatus action="route_access__admin_users" />
           </div>
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
             <button

@@ -33,8 +33,10 @@ const getAllowedOrigins = (): string[] => {
   if (isProduction) {
     // 🚨 IMPORTANTE: Domínios reais de produção configurados
     return [
-      'https://aluguescarpas.netlify.app', // Domínio principal de produção
-      'https://www.aluguescarpas.netlify.app', // Versão com www (se configurada)
+      'https://alugaescarpas.netlify.app', // Domínio principal de produção
+      'https://www.alugaescarpas.netlify.app', // Versão com www (se configurada)
+      'https://alugaescarpas.com', // Domínio customizado
+      'https://www.alugaescarpas.com', // Versão com www do domínio customizado
       // Adicione outros domínios se necessário (staging, custom domain, etc.)
     ];
   }

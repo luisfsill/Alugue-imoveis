@@ -1,0 +1,35 @@
+# Headers de segurança e performance para Netlify
+
+/*
+  # Segurança
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  
+  # Performance
+  X-DNS-Prefetch-Control: on
+  
+  # Cache para assets estáticos
+  Cache-Control: public, max-age=31536000
+
+/assets/*
+  # Cache longo para assets com hash
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  # Cache curto para HTML
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.js
+  # Cache para JavaScript
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  # Cache para CSS
+  Cache-Control: public, max-age=31536000, immutable
+
+/emergency-unblock
+  # Headers específicos para página de desbloqueio
+  Cache-Control: no-cache, no-store, must-revalidate
+  X-Robots-Tag: noindex 
