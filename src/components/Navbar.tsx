@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Building2, LogIn, Menu, X } from 'lucide-react';
+import { Home, Building2, LogIn, Menu, X, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserRole } from '../lib/supabase';
 
@@ -66,9 +66,9 @@ function Navbar() {
     <>
       <nav className="fixed top-0 left-0 right-0 bg-white shadow-md z-[90]">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center h-16">
+          <div className="flex items-center justify-between h-16">
             {/* Desktop Navigation - Centralizado */}
-            <div className="hidden md:flex space-x-4">
+            <div className="hidden md:flex space-x-4 flex-1 justify-center">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
@@ -86,17 +86,34 @@ function Navbar() {
               ))}
             </div>
 
-            {/* Mobile Menu Button - Posicionado à direita */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden absolute right-4 p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
+            {/* Email do usuário - Desktop (lado direito) */}
+            {user && (
+              <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                <User className="h-4 w-4" />
+                <span className="font-medium">{user.email}</span>
+              </div>
+            )}
+
+            {/* Layout Mobile - Botão de menu sempre à direita */}
+            <div className="md:hidden flex items-center justify-between w-full">
+              {/* Elemento central: e-mail do usuário ou um espaço reservado */}
+              {user ? (
+                <div className="flex items-center space-x-2 text-sm text-gray-600 flex-1 justify-center">
+                  <User className="h-4 w-4 flex-shrink-0" />
+                  <span className="font-medium text-center truncate">{user.email}</span>
+                </div>
               ) : (
-                <Menu className="h-6 w-6" />
+                <div className="flex-1"></div> // Espaço reservado para empurrar o menu
               )}
-            </button>
+
+              {/* Botão do menu mobile */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -117,6 +134,16 @@ function Navbar() {
               <X className="h-6 w-6" />
             </button>
           </div>
+
+          {/* Email do usuário no menu mobile */}
+          {user && (
+            <div className="px-4 py-3 border-b bg-gray-50">
+              <div className="flex items-center space-x-2 text-sm text-gray-700">
+                <User className="h-4 w-4" />
+                <span className="font-medium">{user.email}</span>
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto py-4">
             {navItems.map((item) => (

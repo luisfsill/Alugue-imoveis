@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { sanitizeHTML, sanitizeForURL } from '../utils/sanitize';
+import { sanitizeHTML } from '../utils/sanitize';
 import { ImageGallery } from '../components/ImageGallery';
 import { 
   Bed, 
@@ -19,6 +19,7 @@ import {
 import { FaSwimmingPool } from "react-icons/fa";
 import { getProperty } from '../services';
 import type { Property } from '../types/property';
+import { formatRefId } from '../utils/formatters';
 
 function PropertyDetails() {
   const { id } = useParams();
@@ -48,6 +49,9 @@ function PropertyDetails() {
 
   const formatPhoneNumber = (phone: string) => {
     const numericPhone = phone.replace(/\D/g, '');
+    if (numericPhone.length === 13) {
+      return `+${numericPhone.slice(0, 2)} (${numericPhone.slice(2, 4)}) ${numericPhone.slice(4, 9)}-${numericPhone.slice(9)}`;
+    }
     if (numericPhone.length === 11) {
       return `(${numericPhone.slice(0, 2)}) ${numericPhone.slice(2, 7)}-${numericPhone.slice(7)}`;
     }
@@ -55,9 +59,15 @@ function PropertyDetails() {
   };
 
   const getWhatsAppLink = (phone: string) => {
+    if (!property) return '#';
+
     const numericPhone = phone.replace(/\D/g, '');
-    const safeTitle = sanitizeForURL(property?.title || 'imóvel');
-    return `https://wa.me/55${numericPhone}?text=Olá! Vi seu anúncio do imóvel "${safeTitle}" e gostaria de mais informações.`;
+    const ref = property.ref_id ? formatRefId(property.ref_id) : '';
+
+    const message = `Olá! Vi o anúncio do imóvel "${property.title}, ${ref}" no site Aluga Escarpas e gostaria de mais informações.`.trim().replace(/\s+/g, ' ');
+    const encodedMessage = encodeURIComponent(message);
+    
+    return `https://wa.me/${numericPhone}?text=${encodedMessage}`;
   };
 
   if (isLoading) {
@@ -110,7 +120,14 @@ function PropertyDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{property.title}</h1>
+              <div className="flex justify-between items-start">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{property.title}</h1>
+                {property.ref_id && (
+                  <span className="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full ml-4 whitespace-nowrap">
+                    {formatRefId(property.ref_id)}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center text-gray-600 mt-2">
                 <MapPin className="w-5 h-5 mr-2 flex-shrink-0" />
                 <span>{property.location}</span>

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Building2, Bed, Bath, Square, Search, MapPin } from 'lucide-react';
 import { getProperties } from '../services';
 import type { Property } from '../types/property';
+import { formatRefId } from '../utils/formatters';
 
 function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -182,15 +183,22 @@ function Properties() {
             >
               {/* Property Image */}
               <Link to={`/properties/${property.id}`}>
-              <div className="relative h-48 sm:h-56">
-                <img
-                  src={property.images?.[property.coverPhotoIndex || 0] || property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80'}
-                  alt={property.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+              <div className="relative h-48 sm:h-56 bg-gray-200">
+                {property.images && property.images.length > 0 && (
+                  <img
+                    src={property.images?.[property.coverPhotoIndex || 0] || property.images?.[0]}
+                    alt={property.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                )}
                 <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
                   {property.type === 'sale' ? 'Venda' : 'Aluguel'}
                 </div>
+                {property.ref_id && (
+                  <div className="absolute bottom-4 left-4 bg-black/50 text-white px-2 py-1 rounded-lg text-xs font-semibold">
+                    {formatRefId(property.ref_id)}
+                  </div>
+                )}
                 {property.isFeatured && (
                   <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm font-medium">
                     Destaque

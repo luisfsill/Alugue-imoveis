@@ -9,6 +9,7 @@ export interface PropertyFeatures {
 
 export interface Property {
   id?: string;
+  ref_id?: number;
   title: string;
   description: string;
   price: number;

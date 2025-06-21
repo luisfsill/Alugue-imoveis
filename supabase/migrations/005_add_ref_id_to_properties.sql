@@ -1,0 +1,2 @@
+ALTER TABLE properties
+ADD COLUMN ref_id SERIAL NOT NULL UNIQUE; 

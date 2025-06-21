@@ -10,6 +10,7 @@ import { supabase, uploadImage, deleteImage, signOut, getUserRole } from '../lib
 import { CORSStatus } from '../components/CORSStatus';
 import { RateLimitStatus } from '../guards';
 import { useBotDetectionForAdmin } from '../hooks/useBotDetection';
+import { formatRefId } from '../utils/formatters';
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -289,6 +290,17 @@ function AdminDashboard() {
         return;
       }
       
+      const cleanedPhone = brokerPhone.replace(/\D/g, '');
+
+      // Validação do telefone: se preenchido, deve ter 11 dígitos
+      if (brokerPhone && cleanedPhone.length !== 11) {
+        toast.error('O telefone do corretor deve ter 11 dígitos (DDD + número).');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const fullPhoneNumber = brokerPhone ? `55${cleanedPhone}` : '';
+
       const propertyData = {
         ...property,
         title: property.title || '',
@@ -311,8 +323,9 @@ function AdminDashboard() {
         },
         isFeatured: property.isFeatured || false,
         is_featured: (property.isFeatured || false) && userRole === 'admin',
-        brokerPhone,
-        brokerEmail
+        brokerPhone: fullPhoneNumber,
+        brokerEmail,
+        ref_id: property.ref_id
       };
       
       if (isEditing && property.id) {
@@ -541,6 +554,11 @@ function AdminDashboard() {
                     <h3 className="font-semibold text-base md:text-lg truncate">{prop.title}</h3>
                     <p className="text-gray-600 text-sm md:text-base truncate">{prop.location}</p>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 space-y-1 sm:space-y-0">
+                      {prop.ref_id && (
+                        <p className="text-gray-500 font-medium text-sm md:text-base">
+                          {formatRefId(prop.ref_id)}
+                        </p>
+                      )}
                       <p className="text-blue-600 font-semibold text-sm md:text-base">
                         {prop.price === 0 && prop.type === 'rent' ? 'A consultar!' : `R$ ${formatCurrency(prop.price)}${prop.type === 'rent' ? '/mês' : ''}`}
                       </p>
@@ -737,64 +755,64 @@ function AdminDashboard() {
                   Características
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer h-12">
                     <input
                       type="checkbox"
                       checked={property.features?.has_pool}
                       onChange={() => handleFeatureChange('has_pool')}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
                     />
-                    <FaSwimmingPool className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    <FaSwimmingPool className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                     <span className="text-sm md:text-base">Piscina</span>
                   </label>
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer h-12">
                     <input
                       type="checkbox"
                       checked={property.features?.has_garden}
                       onChange={() => handleFeatureChange('has_garden')}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
                     />
-                    <Tree className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    <Tree className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                     <span className="text-sm md:text-base">Jardim</span>
                   </label>
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer h-12">
                     <input
                       type="checkbox"
                       checked={property.features?.has_garage}
                       onChange={() => handleFeatureChange('has_garage')}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
                     />
-                    <Car className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    <Car className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                     <span className="text-sm md:text-base">Garagem</span>
                   </label>
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer h-12">
                     <input
                       type="checkbox"
                       checked={property.features?.has_security_system}
                       onChange={() => handleFeatureChange('has_security_system')}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
                     />
-                    <Shield className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    <Shield className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                     <span className="text-sm md:text-base">Sistema de Segurança</span>
                   </label>
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer h-12">
                     <input
                       type="checkbox"
                       checked={property.features?.has_air_conditioning}
                       onChange={() => handleFeatureChange('has_air_conditioning')}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
                     />
-                    <Wind className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    <Wind className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                     <span className="text-sm md:text-base">Ar Condicionado Central</span>
                   </label>
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer h-12">
                     <input
                       type="checkbox"
                       checked={property.features?.has_premium_appliances}
                       onChange={() => handleFeatureChange('has_premium_appliances')}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
                     />
-                    <Refrigerator className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    <Refrigerator className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                     <span className="text-sm md:text-base">Eletrodomésticos de Alto Padrão</span>
                   </label>
                 </div>
@@ -811,7 +829,7 @@ function AdminDashboard() {
                     type="tel"
                     name="brokerPhone"
                     className="w-full px-3 md:px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-                    placeholder="(00) 00000-0000"
+                    placeholder="(XX) XXXXX-XXXX"
                     value={brokerPhone}
                     onChange={handleBrokerContactChange}
                   />

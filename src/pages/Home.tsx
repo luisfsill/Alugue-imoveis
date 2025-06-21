@@ -137,7 +137,7 @@ function Home() {
                       className="group"
                     />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{property.title}</h3>
+                  <h3 className="text-xl font-bold mb-2 h-14 md:h-auto md:truncate">{property.title}</h3>
                   <div className="flex items-center text-gray-600 mb-3">
                     <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
                     <span className="text-sm">{property.location}</span>
