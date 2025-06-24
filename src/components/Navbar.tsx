@@ -41,6 +41,28 @@ function Navbar() {
     }
   };
 
+  const handleInicioClick = (e?: React.MouseEvent) => {
+    // Se já estiver na página inicial, rola para o topo
+    if (location.pathname === '/') {
+      e?.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleImoveisClick = (e?: React.MouseEvent) => {
+    // Se já estiver na página de imóveis, rola para o topo
+    if (location.pathname === '/properties') {
+      e?.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const getAreaLabel = () => {
     if (!user) return 'Entrar';
     return userRole === 'admin' ? 'Área Administrativa' : 'Meus Imóveis';
@@ -52,8 +74,18 @@ function Navbar() {
   };
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Início' },
-    { path: '/properties', icon: Building2, label: 'Imóveis' },
+    { 
+      path: '/', 
+      icon: Home, 
+      label: 'Início',
+      onClick: handleInicioClick
+    },
+    { 
+      path: '/properties', 
+      icon: Building2, 
+      label: 'Imóveis',
+      onClick: handleImoveisClick
+    },
     { 
       path: getAreaPath(),
       icon: LogIn,
@@ -151,8 +183,7 @@ function Navbar() {
                 to={item.path}
                 onClick={(e) => {
                   if (item.onClick) {
-                    e.preventDefault();
-                    item.onClick();
+                    item.onClick(e);
                   }
                   setIsMobileMenuOpen(false);
                 }}

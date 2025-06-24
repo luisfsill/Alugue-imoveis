@@ -71,7 +71,9 @@ function App() {
                     </div>
                     <div className="text-center">
                       <a 
-                        href="tel:37999420051" 
+                        href="https://wa.me/5537999420051?text=Olá! Tenho interesse em um imóvel que vi no site Aluga Escarpas. Poderia me ajudar?"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center space-x-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-md group"
                       >
                         <svg className="w-4 h-4 group-hover:animate-pulse" fill="currentColor" viewBox="0 0 20 20">
