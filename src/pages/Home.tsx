@@ -43,12 +43,16 @@ function Home() {
 
   return (
     <div className="space-y-8">
-      {/* Header com título e ícone */}
+      {/* Header com título e logo */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8 md:py-12 -mx-4 md:mx-0 px-4 md:px-0 md:rounded-lg">
         <div className="container mx-auto px-4 md:px-4 text-center">
-          <div className="flex items-center justify-center space-x-2 md:space-x-3 mb-3 md:mb-4">
-            <Building2 className="h-8 w-8 md:h-10 md:w-10 text-white" />
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">Alugue Imóveis em Escarpas e Região</h1>
+          <div className="flex items-center justify-center space-x-3 sm:space-x-4 md:space-x-4 lg:space-x-5 xl:space-x-6 mb-3 md:mb-4">
+            <img 
+              src="/Logo JM 1.jpg" 
+              alt="Logo JM" 
+              className="h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 xl:h-24 xl:w-24 object-contain"
+            />
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">Alugue e Compre Imóveis em Escarpas e Região</h1>
           </div>
           <p className="text-base md:text-lg lg:text-xl text-blue-100 max-w-2xl md:max-w-3xl mx-auto">
             Encontre o imóvel perfeito para você

@@ -61,18 +61,28 @@ function App() {
                 </Routes>
               </main>
               
-              <footer className="bg-white shadow-md mt-12">
+              <footer className="bg-white shadow-md mt-4">
                 <div className="container mx-auto px-4 py-6">
-                  <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-8">
-                    <div className="text-center">
-                      <p className="text-gray-600">
-                        © {new Date().getFullYear()} Alugue Imóveis. Todos os direitos reservados.
-                      </p>
+                  <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6">
+                    {/* Logo no rodapé */}
+                    <div className="">
+                      <img 
+                        src="/Logo JM 2.png" 
+                        alt="Logo JM" 
+                        className="h-12 w-auto object-contain"
+                      />
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm text-gray-500">
-                        Desenvolvido por LF System
-                      </p>
+                    <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-8">
+                      <div className="text-center">
+                        <p className="text-gray-600">
+                          © {new Date().getFullYear()} Alugue Imóveis. Todos os direitos reservados.
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">
+                          Desenvolvido por LF System
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -292,14 +292,15 @@ function AdminDashboard() {
       
       const cleanedPhone = brokerPhone.replace(/\D/g, '');
 
-      // Validação do telefone: se preenchido, deve ter 11 dígitos
-      if (brokerPhone && cleanedPhone.length !== 11) {
-        toast.error('O telefone do corretor deve ter 11 dígitos (DDD + número).');
+      // Validação do telefone: se preenchido, deve ter 11 dígitos (DDD + número) ou 13 dígitos (código do país + DDD + número)
+      if (brokerPhone && cleanedPhone.length !== 11 && cleanedPhone.length !== 13) {
+        toast.error('O telefone do corretor deve ter 11 dígitos (DDD + número) ou 13 dígitos (código do país + DDD + número).');
         setIsSubmitting(false);
         return;
       }
 
-      const fullPhoneNumber = brokerPhone ? `55${cleanedPhone}` : '';
+      // Se tem 11 dígitos, adiciona o código do país 55. Se tem 13 dígitos, mantém como está
+      const fullPhoneNumber = brokerPhone ? (cleanedPhone.length === 11 ? `55${cleanedPhone}` : cleanedPhone) : '';
 
       const propertyData = {
         ...property,
@@ -366,7 +367,17 @@ function AdminDashboard() {
     setIsEditing(true);
     setProperty(propertyToEdit);
     setCoverPhotoIndex(propertyToEdit.coverPhotoIndex || 0);
-    setBrokerPhone(propertyToEdit.brokerPhone || '');
+    
+    // Formatar o telefone para exibição: se tem 13 dígitos, remove o código do país
+    let displayPhone = propertyToEdit.brokerPhone || '';
+    if (displayPhone) {
+      const cleanedPhone = displayPhone.replace(/\D/g, '');
+      if (cleanedPhone.length === 13) {
+        // Remove o código do país (primeiros 2 dígitos)
+        displayPhone = cleanedPhone.slice(2);
+      }
+    }
+    setBrokerPhone(displayPhone);
     setBrokerEmail(propertyToEdit.brokerEmail || '');
     setShowModal(true);
   };

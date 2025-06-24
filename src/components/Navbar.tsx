@@ -65,10 +65,9 @@ function Navbar() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 bg-white shadow-md z-[90]">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Desktop Navigation - Centralizado */}
-            <div className="hidden md:flex space-x-4 flex-1 justify-center">
+        <div className="container mx-auto px-4 relative">
+          <div className="flex items-center h-16">
+            <div className="hidden md:flex space-x-4 absolute left-1/2 transform -translate-x-1/2">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
@@ -86,9 +85,9 @@ function Navbar() {
               ))}
             </div>
 
-            {/* Email do usuário - Desktop (lado direito) */}
+            {/* Email do usuário - Desktop (lado direito, posicionamento absoluto) */}
             {user && (
-              <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+              <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600 absolute right-0">
                 <User className="h-4 w-4" />
                 <span className="font-medium">{user.email}</span>
               </div>
