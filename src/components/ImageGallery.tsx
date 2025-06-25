@@ -169,6 +169,8 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
               alt={image.alt}
               className="w-full h-full object-cover"
               loading="eager"
+              onContextMenu={(e) => e.preventDefault()}
+              draggable={false}
             />
             {index === previewCount - 1 && reorderedImages.length > previewCount && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity group-hover:bg-black/70">
@@ -260,6 +262,8 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
                   dragConstraints={{ left: 0, right: 0 }}
                   dragElastic={1}
                   onDragEnd={handleDragEnd}
+                  onContextMenu={(e) => e.preventDefault()}
+                  draggable={false}
                   ref={(el) => {
                     if (el) {
                       imageRefs.current.set(currentIndex, el);
@@ -295,3 +299,5 @@ export function ImageGallery({ images, onClose, initialIndex = 0 }: ImageGallery
     </div>
   );
 }
+
+export default ImageGallery;

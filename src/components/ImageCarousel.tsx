@@ -58,7 +58,6 @@ export function ImageCarousel({
   const {
     currentIndex,
     isImageLoading,
-    goToImage,
     nextImage,
     prevImage
   } = useImageLoader(images, initialIndex, {
@@ -109,11 +108,6 @@ export function ImageCarousel({
     prevImage();
   }, [prevImage]);
 
-  const handleGoToImage = useCallback((index: number) => {
-    setDirection(index > currentIndex ? 1 : -1);
-    goToImage(index);
-  }, [currentIndex, goToImage]);
-
   if (!images || images.length === 0) {
     return (
       <div className={`${height} bg-gray-200 rounded-lg flex items-center justify-center ${className}`}>
@@ -142,12 +136,15 @@ export function ImageCarousel({
             key={`${currentIndex}-${images[currentIndex]?.src}`}
             src={images[currentIndex]?.src}
             alt={images[currentIndex]?.alt}
+            fetchPriority="high"
             className={`w-full h-full object-cover absolute`}
             variants={carouselVariants}
             custom={direction}
             initial="enter"
             animate="center"
             exit="exit"
+            onContextMenu={(e) => e.preventDefault()}
+            draggable={false}
           />
         </AnimatePresence>
         
@@ -196,19 +193,14 @@ export function ImageCarousel({
         <div className="absolute bottom-2 left-0 right-0">
           <div className="flex justify-center space-x-1 px-2">
             {images.map((_, index) => (
-              <button
+              <div
                 key={index}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleGoToImage(index);
-                }}
-                className={`w-2 h-2 rounded-full transition-all ${
+                className={`w-3 h-3 rounded-full transition-all ${
                   index === currentIndex 
                     ? 'bg-white scale-125' 
-                    : 'bg-white/50 hover:bg-white/75'
+                    : 'bg-white/50'
                 }`}
-                aria-label={`Ir para imagem ${index + 1}`}
+                aria-hidden="true"
               />
             ))}
           </div>
@@ -216,4 +208,6 @@ export function ImageCarousel({
       )}
     </div>
   );
-} 
+}
+
+export default ImageCarousel; 

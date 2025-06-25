@@ -139,6 +139,7 @@ function Navbar() {
 
               {/* Botão do menu mobile */}
               <button
+                aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
               >
@@ -159,6 +160,7 @@ function Navbar() {
           <div className="flex items-center justify-between p-4 border-b">
             <span className="text-lg font-semibold text-gray-900">Menu</span>
             <button
+              aria-label="Fechar menu"
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-50"
             >

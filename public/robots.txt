@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Se você tiver um sitemap, descomente e ajuste a linha abaixo:
+# Sitemap: https://aluguescarpas.com/sitemap.xml 

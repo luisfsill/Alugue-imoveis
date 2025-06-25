@@ -189,6 +189,8 @@ function Properties() {
                     src={property.images?.[property.coverPhotoIndex || 0] || property.images?.[0]}
                     alt={property.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onContextMenu={(e) => e.preventDefault()}
+                    draggable={false}
                   />
                 )}
                 <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium">

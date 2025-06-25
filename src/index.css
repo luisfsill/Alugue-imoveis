@@ -10,6 +10,15 @@
   input:hover, textarea:hover, select:hover {
     cursor: pointer;
   }
+  
+  /* Proteção global contra download de imagens */
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
 }
 
 @layer utilities {

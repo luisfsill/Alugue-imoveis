@@ -4,7 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getFeaturedProperties } from '../services';
 import type { Property } from '../types/property';
 import { Bed, Bath, Square } from 'lucide-react';
-import { ImageCarousel } from '../components/ImageCarousel';
+import React, { Suspense } from 'react';
+
+const ImageCarousel = React.lazy(() => import('../components/ImageCarousel'));
 
 function Home() {
   const navigate = useNavigate();
@@ -48,9 +50,11 @@ function Home() {
         <div className="container mx-auto px-4 md:px-4 text-center">
           <div className="flex items-center justify-center space-x-3 sm:space-x-4 md:space-x-4 lg:space-x-5 xl:space-x-6 mb-3 md:mb-4">
             <img 
-              src="/Logo JM 1.jpg" 
+              src="/Logo-JM 1.webp" 
               alt="Logo JM" 
               className="h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 xl:h-24 xl:w-24 object-contain"
+              onContextMenu={(e) => e.preventDefault()}
+              draggable={false}
             />
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">Alugue e Compre Imóveis em Escarpas e Região</h1>
           </div>
@@ -83,15 +87,21 @@ function Home() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 {/* Property Type Dropdown */}
-                <select 
-                  className="w-full sm:w-1/2 px-4 py-3 rounded-lg border text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={searchType}
-                  onChange={(e) => setSearchType(e.target.value as 'sale' | 'rent' | '')}
-                >
-                  <option value="">Tipo de Imóvel</option>
-                  <option value="sale">Venda</option>
-                  <option value="rent">Aluguel</option>
-                </select>
+                <div className="w-full sm:w-1/2">
+                  <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de Imóvel
+                  </label>
+                  <select 
+                    id="propertyType"
+                    className="w-full px-4 py-3 rounded-lg border text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={searchType}
+                    onChange={(e) => setSearchType(e.target.value as 'sale' | 'rent' | '')}
+                  >
+                    <option value="">Tipo de Imóvel</option>
+                    <option value="sale">Venda</option>
+                    <option value="rent">Aluguel</option>
+                  </select>
+                </div>
                 {/* Search Button */}
                 <button 
                   onClick={handleSearch}
@@ -129,17 +139,27 @@ function Home() {
                 <div key={propertyIndex} className="bg-white p-4 rounded-lg shadow-md relative group">
                   {/* Carousel de Imagens */}
                   <div className="mb-4">
-                    <ImageCarousel
-                      images={property.images.map((src, index) => ({
-                        src,
-                        alt: `${property.title} - Imagem ${index + 1}`
-                      }))}
-                      initialIndex={property.coverPhotoIndex || 0}
-                      height="h-[200px]"
-                      showNavigation={true}
-                      autoPlay={false}
-                      className="group"
-                    />
+                    <Suspense fallback={
+                      <div className="flex justify-center items-center h-[200px]">
+                        <svg className="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="ml-2 text-blue-600">Carregando imagens...</span>
+                      </div>
+                    }>
+                      <ImageCarousel
+                        images={property.images.map((src, index) => ({
+                          src,
+                          alt: `${property.title} - Imagem ${index + 1}`
+                        }))}
+                        initialIndex={property.coverPhotoIndex || 0}
+                        height="h-[200px]"
+                        showNavigation={true}
+                        autoPlay={false}
+                        className="group"
+                      />
+                    </Suspense>
                   </div>
                   <h3 className="text-xl font-bold mb-2 h-14 md:h-auto md:truncate">{property.title}</h3>
                   <div className="flex items-center text-gray-600 mb-3">
@@ -177,7 +197,7 @@ function Home() {
       <section className="py-12 bg-blue-600 text-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="space-y-6">
+            <div className="space-y-6 md:pl-4 lg:pl-8">
               <h2 className="text-4xl font-bold">Anuncie seu Imóvel</h2>
               <p className="text-xl">
                 Alcance milhares de compradores e inquilinos interessados.
@@ -212,6 +232,8 @@ function Home() {
                 src="https://plus.unsplash.com/premium_photo-1661752229232-96232a11c62b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                 alt="Anuncie seu imóvel"
                 className="w-full h-full object-cover"
+                onContextMenu={(e) => e.preventDefault()}
+                draggable={false}
               />
               <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/90 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/90 to-transparent"></div>

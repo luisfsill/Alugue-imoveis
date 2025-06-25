@@ -11,6 +11,7 @@ import { CORSStatus } from '../components/CORSStatus';
 import { RateLimitStatus } from '../guards';
 import { useBotDetectionForAdmin } from '../hooks/useBotDetection';
 import { formatRefId } from '../utils/formatters';
+import imageCompression from 'browser-image-compression';
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -153,12 +154,28 @@ function AdminDashboard() {
       
       console.log('📋 Arquivos para upload:', filesToUpload.length);
 
+      // Otimizar imagens antes do upload
+      const optimizedFiles = await Promise.all(filesToUpload.map(async (file) => {
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true,
+          fileType: 'image/webp'
+        };
+        try {
+          return await imageCompression(file, options);
+        } catch (err) {
+          console.error('Erro ao otimizar imagem:', err);
+          return file; // fallback para o original se falhar
+        }
+      }));
+
       // Upload um por vez para melhor debug
       const uploadedUrls: string[] = [];
       
-      for (let i = 0; i < filesToUpload.length; i++) {
-        const file = filesToUpload[i];
-        console.log(`📸 Uploading arquivo ${i + 1}/${filesToUpload.length}:`, file.name);
+      for (let i = 0; i < optimizedFiles.length; i++) {
+        const file = optimizedFiles[i];
+        console.log(`📸 Uploading arquivo ${i + 1}/${optimizedFiles.length}:`, file.name);
         
         try {
           const url = await uploadImage(file);

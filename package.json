@@ -13,6 +13,7 @@
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/supabase-js": "^2.39.3",
     "@types/dompurify": "^3.0.5",
+    "browser-image-compression": "^2.0.2",
     "cookie": "^1.0.2",
     "dompurify": "^3.2.6",
     "dotenv": "^16.5.0",
